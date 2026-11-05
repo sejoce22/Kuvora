@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Kuvora.Api/Kuvora.Api.csproj" />
+    <Project Path="src/Kuvora.Application/Kuvora.Application.csproj" />
+    <Project Path="src/Kuvora.Domain/Kuvora.Domain.csproj" />
+    <Project Path="src/Kuvora.Infrastructure/Kuvora.Infrastructure.csproj" />
+  </Folder>
+</Solution>

@@ -5,4 +5,7 @@
     <Project Path="src/Kuvora.Domain/Kuvora.Domain.csproj" />
     <Project Path="src/Kuvora.Infrastructure/Kuvora.Infrastructure.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Kuvora.Domain.Tests/Kuvora.Domain.Tests.csproj" />
+  </Folder>
 </Solution>

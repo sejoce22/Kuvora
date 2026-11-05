@@ -1,4 +1,5 @@
 using Kuvora.Infrastructure;
+using Kuvora.Application;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,6 +13,8 @@ var connectionString = builder.Configuration.GetConnectionString("Default")
     ?? throw new InvalidOperationException("Falta ConnectionStrings:Default.");
 
 builder.Services.AddInfrastructure(connectionString);
+
+builder.Services.AddApplication();
 
 var app = builder.Build();
 

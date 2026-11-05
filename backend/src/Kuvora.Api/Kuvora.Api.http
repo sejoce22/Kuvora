@@ -1,4 +1,4 @@
-@Kuvora.Api_HostAddress = http://localhost:5151
+@Kuvora.Api_HostAddress = https://localhost:7052
 
 GET {{Kuvora.Api_HostAddress}}/api/tenants
 
@@ -7,7 +7,7 @@ GET {{Kuvora.Api_HostAddress}}/api/tenants
 POST {{Kuvora.Api_HostAddress}}/api/tenants
 Content-Type: application/json
 
-{ "name": "Restaurante Demo" }
+{ "name": "Restaurante Madero" }
 
 ###
 

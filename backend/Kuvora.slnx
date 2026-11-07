@@ -7,5 +7,6 @@
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Kuvora.Domain.Tests/Kuvora.Domain.Tests.csproj" />
+    <Project Path="tests/Kuvora.Infrastructure.Tests/Kuvora.Infrastructure.Tests.csproj" />
   </Folder>
 </Solution>

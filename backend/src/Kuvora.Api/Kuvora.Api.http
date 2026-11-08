@@ -5,7 +5,7 @@
 ### Ejecuta las secciones en orden, de arriba hacia abajo.
 ### Los tokens duran 15 minutos: si recibes 401 inesperados, vuelve a ejecutar la 1.3, 1.4 y 4.1.
 ### "201 / 409" significa: 201 la primera vez, 409 si ya lo habías creado (ambos son correctos).
-### La sección 6 (refresh) va al final porque revoca los refresh tokens de Ana.
+### El refresh token viaja en una cookie HttpOnly: la rotación y la reutilización se prueban desde Angular (el navegador guarda la cookie).
 ### ============================================================
 
 ### ---- 1. PREPARACIÓN (ejecútala una vez y repite solo los logins) ----
@@ -267,11 +267,12 @@ Authorization: Bearer {{loginAdmin.response.body.$.accessToken}}
 
 ###
 
-### ---- 6. REFRESH TOKENS Y LOGOUT (al final: revoca los refresh tokens de Ana) ----
-### Orden: 6.1, 6.2, 6.3, 6.4. Luego 6.5, 6.6 y 6.7 (6.5 es su propio login).
+### ---- 6. COOKIE DEL REFRESH TOKEN ----
+### El refresh token ya no viene en el cuerpo: llega en la cabecera Set-Cookie. La rotación y la
+### detección de reutilización se prueban desde el navegador, con la pantalla de login de Angular.
 
-### 6.1 Login de Ana para esta prueba: 200
-# @name loginR
+### 6.1 Login de Ana: 200. En las cabeceras de la respuesta debe aparecer Set-Cookie: kuvora_refresh=...; httponly; secure; samesite=strict; path=/api/auth
+### El cuerpo trae accessToken, expiresAtUtc y user, y NO trae refreshToken
 POST {{Kuvora.Api_HostAddress}}/api/auth/login
 Content-Type: application/json
 
@@ -279,66 +280,16 @@ Content-Type: application/json
 
 ###
 
-### 6.2 Refresh con el token del login: 200 (devuelve un par NUEVO)
-# @name refreshed
+### 6.2 Refresh sin cookie: 401
 POST {{Kuvora.Api_HostAddress}}/api/auth/refresh
-Content-Type: application/json
-
-{ "refreshToken": "{{loginR.response.body.$.refreshToken}}" }
 
 ###
 
-### 6.3 Reutilizar el MISMO refresh token del login: 401 (y revoca todos los de Ana)
+### 6.3 Refresh con una cookie inventada: 401
 POST {{Kuvora.Api_HostAddress}}/api/auth/refresh
-Content-Type: application/json
-
-{ "refreshToken": "{{loginR.response.body.$.refreshToken}}" }
+Cookie: kuvora_refresh=esto-no-es-un-token
 
 ###
 
-### 6.4 El token nuevo de la 6.2 también quedó revocado por la reutilización: 401
-POST {{Kuvora.Api_HostAddress}}/api/auth/refresh
-Content-Type: application/json
-
-{ "refreshToken": "{{refreshed.response.body.$.refreshToken}}" }
-
-###
-
-### 6.5 Login de Ana para probar el logout: 200
-# @name loginL
-POST {{Kuvora.Api_HostAddress}}/api/auth/login
-Content-Type: application/json
-
-{ "email": "ana@madero.test", "password": "Prueba-12345" }
-
-###
-
-### 6.6 Logout: 204
+### 6.4 Logout sin cookie: 204 (idempotente)
 POST {{Kuvora.Api_HostAddress}}/api/auth/logout
-Content-Type: application/json
-
-{ "refreshToken": "{{loginL.response.body.$.refreshToken}}" }
-
-###
-
-### 6.7 Refresh después del logout: 401
-POST {{Kuvora.Api_HostAddress}}/api/auth/refresh
-Content-Type: application/json
-
-{ "refreshToken": "{{loginL.response.body.$.refreshToken}}" }
-
-###
-
-### 6.8 Refresh con basura: 401
-POST {{Kuvora.Api_HostAddress}}/api/auth/refresh
-Content-Type: application/json
-
-{ "refreshToken": "esto-no-es-un-token" }
-
-###
-
-### 6.9 Refresh sin cuerpo válido: 400
-POST {{Kuvora.Api_HostAddress}}/api/auth/refresh
-Content-Type: application/json
-
-{ }

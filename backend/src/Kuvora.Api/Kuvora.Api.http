@@ -40,7 +40,7 @@ Content-Type: application/json
 
 ###
 
-### 4. Login correcto: 200
+### 4. Login correcto: 200 (ahora devuelve también refreshToken)
 # @name login
 POST {{Kuvora.Api_HostAddress}}/api/auth/login
 Content-Type: application/json
@@ -76,6 +76,66 @@ GET {{Kuvora.Api_HostAddress}}/api/auth/me
 
 ###
 
-### 9. Tenants con token: 200 (ojo, ver nota abajo)
+### 9. Tenants con token: 200 (ojo: todavía lista todos los restaurantes)
 GET {{Kuvora.Api_HostAddress}}/api/tenants
 Authorization: Bearer {{login.response.body.$.accessToken}}
+
+###
+
+### ---- Refresh tokens ----
+### Orden: ejecuta el 4 (login), luego el 10, el 11 y el 12. Para el 13 y 14, vuelve a ejecutar el 4.
+
+### 10. Refresh con el token del login: 200 (devuelve un par NUEVO)
+# @name refresh
+POST {{Kuvora.Api_HostAddress}}/api/auth/refresh
+Content-Type: application/json
+
+{ "refreshToken": "{{login.response.body.$.refreshToken}}" }
+
+###
+
+### 11. Reutilizar el MISMO refresh token del login: 401 (y revoca todos los del usuario)
+POST {{Kuvora.Api_HostAddress}}/api/auth/refresh
+Content-Type: application/json
+
+{ "refreshToken": "{{login.response.body.$.refreshToken}}" }
+
+###
+
+### 12. El token nuevo del paso 10 también quedó revocado por la reutilización: 401
+POST {{Kuvora.Api_HostAddress}}/api/auth/refresh
+Content-Type: application/json
+
+{ "refreshToken": "{{refresh.response.body.$.refreshToken}}" }
+
+###
+
+### 13. (Ejecuta antes el 4 de nuevo) Logout: 204
+POST {{Kuvora.Api_HostAddress}}/api/auth/logout
+Content-Type: application/json
+
+{ "refreshToken": "{{login.response.body.$.refreshToken}}" }
+
+###
+
+### 14. Refresh después del logout: 401
+POST {{Kuvora.Api_HostAddress}}/api/auth/refresh
+Content-Type: application/json
+
+{ "refreshToken": "{{login.response.body.$.refreshToken}}" }
+
+###
+
+### 15. Refresh con basura: 401
+POST {{Kuvora.Api_HostAddress}}/api/auth/refresh
+Content-Type: application/json
+
+{ "refreshToken": "esto-no-es-un-token" }
+
+###
+
+### 16. Refresh sin cuerpo válido: 400
+POST {{Kuvora.Api_HostAddress}}/api/auth/refresh
+Content-Type: application/json
+
+{ }

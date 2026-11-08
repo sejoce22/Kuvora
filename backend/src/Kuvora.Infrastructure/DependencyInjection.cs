@@ -1,4 +1,4 @@
-﻿using Kuvora.Application.Auth;
+using Kuvora.Application.Auth;
 using Kuvora.Application.Common;
 using Kuvora.Domain.Users;
 using Kuvora.Infrastructure.Persistence;
@@ -28,6 +28,7 @@ public static class DependencyInjection
 
         services.AddSingleton(TimeProvider.System);
         services.AddSingleton<ITokenService, JwtTokenService>();
+        services.AddSingleton<IRefreshTokenGenerator, RefreshTokenGenerator>();
 
         return services;
     }

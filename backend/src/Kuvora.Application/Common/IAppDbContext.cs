@@ -1,4 +1,4 @@
-﻿using Kuvora.Domain.Tenants;
+using Kuvora.Domain.Tenants;
 using Kuvora.Domain.Users;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,6 +8,7 @@ public interface IAppDbContext
 {
     DbSet<Tenant> Tenants { get; }
     DbSet<User> Users { get; }
+    DbSet<RefreshToken> RefreshTokens { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken);
 }

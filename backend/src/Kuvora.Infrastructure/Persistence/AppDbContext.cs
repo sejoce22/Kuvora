@@ -1,4 +1,4 @@
-﻿using Kuvora.Application.Common;
+using Kuvora.Application.Common;
 using Kuvora.Domain.Tenants;
 using Kuvora.Domain.Users;
 using Microsoft.EntityFrameworkCore;
@@ -9,6 +9,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 {
     public DbSet<Tenant> Tenants => Set<Tenant>();
     public DbSet<User> Users => Set<User>();
+    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);

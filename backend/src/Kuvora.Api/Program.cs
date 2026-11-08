@@ -1,6 +1,9 @@
+using System.Text.Json.Serialization;
 using Kuvora.Api.ErrorHandling;
 using Kuvora.Api.Extensions;
+using Kuvora.Api.Security;
 using Kuvora.Application;
+using Kuvora.Application.Common;
 using Kuvora.Infrastructure;
 using Serilog;
 
@@ -17,7 +20,12 @@ try
         .ReadFrom.Services(services)
         .Enrich.FromLogContext());
 
-    builder.Services.AddControllers();
+    builder.Services
+        .AddControllers()
+        // Los enums viajan como texto ("Waiter") en vez de números
+        .AddJsonOptions(options =>
+            options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+
     builder.Services.AddOpenApi();
 
     var connectionString = builder.Configuration.GetConnectionString("Default")
@@ -26,8 +34,11 @@ try
     builder.Services.AddInfrastructure(connectionString);
     builder.Services.AddApplication();
 
-    builder.Services.AddJwtAuthentication();
+    builder.Services.AddHttpContextAccessor();
+    builder.Services.AddScoped<ICurrentUser, CurrentUser>();
 
+    builder.Services.AddJwtAuthentication();
+    builder.Services.AddAppAuthorization();
     builder.Services.AddProblemDetails();
     builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
@@ -39,7 +50,7 @@ try
 
     if (app.Environment.IsDevelopment())
     {
-        app.MapOpenApi();
+        app.MapOpenApi().AllowAnonymous();
     }
 
     app.UseHttpsRedirection();

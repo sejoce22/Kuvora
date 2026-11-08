@@ -1,4 +1,5 @@
-﻿using Kuvora.Application.Tenants;
+﻿using Kuvora.Api.Authorization;
+using Kuvora.Application.Tenants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -6,7 +7,7 @@ namespace Kuvora.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
+[Authorize(Policy = Policies.AdminOnly)]
 public class TenantsController(ITenantService tenantService) : ControllerBase
 {
     [HttpGet]

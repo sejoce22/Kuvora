@@ -139,3 +139,136 @@ POST {{Kuvora.Api_HostAddress}}/api/auth/refresh
 Content-Type: application/json
 
 { }
+
+###
+
+### ---- Personal del restaurante y roles (paso 6b) ----
+### Los tokens duran 15 minutos: ejecuta antes el 4 (login de Ana, Admin) y luego estas peticiones.
+
+### 17. El Admin crea un mozo: 201
+POST {{Kuvora.Api_HostAddress}}/api/users
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+{
+  "fullName": "Luis Mozo",
+  "email": "luis@madero.test",
+  "password": "Mozo-12345",
+  "role": "Waiter"
+}
+
+###
+
+### 18. Mismo email otra vez: 409
+POST {{Kuvora.Api_HostAddress}}/api/users
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+{
+  "fullName": "Luis Mozo",
+  "email": "luis@madero.test",
+  "password": "Mozo-12345",
+  "role": "Waiter"
+}
+
+###
+
+### 19. Rol que no existe ("Chef"): 400
+POST {{Kuvora.Api_HostAddress}}/api/users
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+{
+  "fullName": "Otra Persona",
+  "email": "chef@madero.test",
+  "password": "Chef-12345",
+  "role": "Chef"
+}
+
+###
+
+### 20. Rol numérico inválido (99): 400
+POST {{Kuvora.Api_HostAddress}}/api/users
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+{
+  "fullName": "Otra Persona",
+  "email": "chef@madero.test",
+  "password": "Chef-12345",
+  "role": 99
+}
+
+###
+
+### 21. El Admin lista su personal: 200 (Ana y Luis)
+GET {{Kuvora.Api_HostAddress}}/api/users
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+###
+
+### 22. Login del mozo: 200
+# @name loginWaiter
+POST {{Kuvora.Api_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{ "email": "luis@madero.test", "password": "Mozo-12345" }
+
+###
+
+### 23. El mozo intenta listar el personal: 403 (autenticado, pero sin permiso)
+GET {{Kuvora.Api_HostAddress}}/api/users
+Authorization: Bearer {{loginWaiter.response.body.$.accessToken}}
+
+###
+
+### 24. El mozo consulta su propio perfil: 200 (role = Waiter)
+GET {{Kuvora.Api_HostAddress}}/api/auth/me
+Authorization: Bearer {{loginWaiter.response.body.$.accessToken}}
+
+###
+
+### 25. El mozo intenta ver los restaurantes: 403
+GET {{Kuvora.Api_HostAddress}}/api/tenants
+Authorization: Bearer {{loginWaiter.response.body.$.accessToken}}
+
+###
+
+### 26. Sin token: 401 (no 403)
+GET {{Kuvora.Api_HostAddress}}/api/users
+
+###
+
+### ---- Aislamiento entre restaurantes ----
+
+### 27. Segundo restaurante: 201 (si ya existe da 409; entonces usa un login)
+# @name registerB
+POST {{Kuvora.Api_HostAddress}}/api/auth/register
+Content-Type: application/json
+
+{
+  "restaurantName": "Restaurante Otro",
+  "fullName": "Bea Soto",
+  "email": "bea@otro.test",
+  "password": "Prueba-12345"
+}
+
+###
+
+### 28. El Admin del segundo restaurante lista su personal: 200 y SOLO aparece Bea
+GET {{Kuvora.Api_HostAddress}}/api/users
+Authorization: Bearer {{registerB.response.body.$.accessToken}}
+
+###
+
+### 29. Bea intenta crear un usuario con el email de Luis (de otro restaurante): 409
+POST {{Kuvora.Api_HostAddress}}/api/users
+Content-Type: application/json
+Authorization: Bearer {{registerB.response.body.$.accessToken}}
+
+{
+  "fullName": "Luis Duplicado",
+  "email": "luis@madero.test",
+  "password": "Mozo-12345",
+  "role": "Kitchen"
+}

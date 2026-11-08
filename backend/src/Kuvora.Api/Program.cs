@@ -36,6 +36,7 @@ try
 
     builder.Services.AddHttpContextAccessor();
     builder.Services.AddScoped<ICurrentUser, CurrentUser>();
+    builder.Services.AddScoped<ICurrentTenant, CurrentTenant>();
 
     builder.Services.AddJwtAuthentication();
     builder.Services.AddAppAuthorization();

@@ -1,7 +1,16 @@
 @Kuvora.Api_HostAddress = https://localhost:7052
 
-### 1. Registrar restaurante: 201
-# @name register
+### ============================================================
+### GUÍA RÁPIDA
+### Ejecuta las secciones en orden, de arriba hacia abajo.
+### Los tokens duran 15 minutos: si recibes 401 inesperados, vuelve a ejecutar la 1.3, 1.4 y 4.1.
+### "201 / 409" significa: 201 la primera vez, 409 si ya lo habías creado (ambos son correctos).
+### La sección 6 (refresh) va al final porque revoca los refresh tokens de Ana.
+### ============================================================
+
+### ---- 1. PREPARACIÓN (ejecútala una vez y repite solo los logins) ----
+
+### 1.1 Registrar el restaurante de Ana (Admin): 201 / 409
 POST {{Kuvora.Api_HostAddress}}/api/auth/register
 Content-Type: application/json
 
@@ -14,235 +23,7 @@ Content-Type: application/json
 
 ###
 
-### 2. Mismo email otra vez: 409
-POST {{Kuvora.Api_HostAddress}}/api/auth/register
-Content-Type: application/json
-
-{
-  "restaurantName": "Otro",
-  "fullName": "Otra Persona",
-  "email": "ANA@madero.test",
-  "password": "Prueba-12345"
-}
-
-###
-
-### 3. Contraseña muy corta: 400
-POST {{Kuvora.Api_HostAddress}}/api/auth/register
-Content-Type: application/json
-
-{
-  "restaurantName": "Otro",
-  "fullName": "Otra Persona",
-  "email": "otra@madero.test",
-  "password": "corta"
-}
-
-###
-
-### 4. Login correcto: 200 (ahora devuelve también refreshToken)
-# @name login
-POST {{Kuvora.Api_HostAddress}}/api/auth/login
-Content-Type: application/json
-
-{ "email": "ana@madero.test", "password": "Prueba-12345" }
-
-###
-
-### 5. Contraseña incorrecta: 401
-POST {{Kuvora.Api_HostAddress}}/api/auth/login
-Content-Type: application/json
-
-{ "email": "ana@madero.test", "password": "incorrecta-123" }
-
-###
-
-### 6. Email que no existe: 401 (mismo cuerpo que la anterior)
-POST {{Kuvora.Api_HostAddress}}/api/auth/login
-Content-Type: application/json
-
-{ "email": "nadie@madero.test", "password": "Prueba-12345" }
-
-###
-
-### 7. Me con token: 200
-GET {{Kuvora.Api_HostAddress}}/api/auth/me
-Authorization: Bearer {{login.response.body.$.accessToken}}
-
-###
-
-### 8. Me sin token: 401
-GET {{Kuvora.Api_HostAddress}}/api/auth/me
-
-###
-
-### 9. Tenants con token: 200 (ojo: todavía lista todos los restaurantes)
-GET {{Kuvora.Api_HostAddress}}/api/tenants
-Authorization: Bearer {{login.response.body.$.accessToken}}
-
-###
-
-### ---- Refresh tokens ----
-### Orden: ejecuta el 4 (login), luego el 10, el 11 y el 12. Para el 13 y 14, vuelve a ejecutar el 4.
-
-### 10. Refresh con el token del login: 200 (devuelve un par NUEVO)
-# @name refresh
-POST {{Kuvora.Api_HostAddress}}/api/auth/refresh
-Content-Type: application/json
-
-{ "refreshToken": "{{login.response.body.$.refreshToken}}" }
-
-###
-
-### 11. Reutilizar el MISMO refresh token del login: 401 (y revoca todos los del usuario)
-POST {{Kuvora.Api_HostAddress}}/api/auth/refresh
-Content-Type: application/json
-
-{ "refreshToken": "{{login.response.body.$.refreshToken}}" }
-
-###
-
-### 12. El token nuevo del paso 10 también quedó revocado por la reutilización: 401
-POST {{Kuvora.Api_HostAddress}}/api/auth/refresh
-Content-Type: application/json
-
-{ "refreshToken": "{{refresh.response.body.$.refreshToken}}" }
-
-###
-
-### 13. (Ejecuta antes el 4 de nuevo) Logout: 204
-POST {{Kuvora.Api_HostAddress}}/api/auth/logout
-Content-Type: application/json
-
-{ "refreshToken": "{{login.response.body.$.refreshToken}}" }
-
-###
-
-### 14. Refresh después del logout: 401
-POST {{Kuvora.Api_HostAddress}}/api/auth/refresh
-Content-Type: application/json
-
-{ "refreshToken": "{{login.response.body.$.refreshToken}}" }
-
-###
-
-### 15. Refresh con basura: 401
-POST {{Kuvora.Api_HostAddress}}/api/auth/refresh
-Content-Type: application/json
-
-{ "refreshToken": "esto-no-es-un-token" }
-
-###
-
-### 16. Refresh sin cuerpo válido: 400
-POST {{Kuvora.Api_HostAddress}}/api/auth/refresh
-Content-Type: application/json
-
-{ }
-
-###
-
-### ---- Personal del restaurante y roles (paso 6b) ----
-### Los tokens duran 15 minutos: ejecuta antes el 4 (login de Ana, Admin) y luego estas peticiones.
-
-### 17. El Admin crea un mozo: 201
-POST {{Kuvora.Api_HostAddress}}/api/users
-Content-Type: application/json
-Authorization: Bearer {{login.response.body.$.accessToken}}
-
-{
-  "fullName": "Luis Mozo",
-  "email": "luis@madero.test",
-  "password": "Mozo-12345",
-  "role": "Waiter"
-}
-
-###
-
-### 18. Mismo email otra vez: 409
-POST {{Kuvora.Api_HostAddress}}/api/users
-Content-Type: application/json
-Authorization: Bearer {{login.response.body.$.accessToken}}
-
-{
-  "fullName": "Luis Mozo",
-  "email": "luis@madero.test",
-  "password": "Mozo-12345",
-  "role": "Waiter"
-}
-
-###
-
-### 19. Rol que no existe ("Chef"): 400
-POST {{Kuvora.Api_HostAddress}}/api/users
-Content-Type: application/json
-Authorization: Bearer {{login.response.body.$.accessToken}}
-
-{
-  "fullName": "Otra Persona",
-  "email": "chef@madero.test",
-  "password": "Chef-12345",
-  "role": "Chef"
-}
-
-###
-
-### 20. Rol numérico inválido (99): 400
-POST {{Kuvora.Api_HostAddress}}/api/users
-Content-Type: application/json
-Authorization: Bearer {{login.response.body.$.accessToken}}
-
-{
-  "fullName": "Otra Persona",
-  "email": "chef@madero.test",
-  "password": "Chef-12345",
-  "role": 99
-}
-
-###
-
-### 21. El Admin lista su personal: 200 (Ana y Luis)
-GET {{Kuvora.Api_HostAddress}}/api/users
-Authorization: Bearer {{login.response.body.$.accessToken}}
-
-###
-
-### 22. Login del mozo: 200
-# @name loginWaiter
-POST {{Kuvora.Api_HostAddress}}/api/auth/login
-Content-Type: application/json
-
-{ "email": "luis@madero.test", "password": "Mozo-12345" }
-
-###
-
-### 23. El mozo intenta listar el personal: 403 (autenticado, pero sin permiso)
-GET {{Kuvora.Api_HostAddress}}/api/users
-Authorization: Bearer {{loginWaiter.response.body.$.accessToken}}
-
-###
-
-### 24. El mozo consulta su propio perfil: 200 (role = Waiter)
-GET {{Kuvora.Api_HostAddress}}/api/auth/me
-Authorization: Bearer {{loginWaiter.response.body.$.accessToken}}
-
-###
-
-### 25. El mozo intenta ver los restaurantes: 403
-GET {{Kuvora.Api_HostAddress}}/api/tenants
-Authorization: Bearer {{loginWaiter.response.body.$.accessToken}}
-
-###
-
-### 26. Sin token: 401 (no 403)
-GET {{Kuvora.Api_HostAddress}}/api/users
-
-###
-
-### ---- Aislamiento entre restaurantes ----
-
-### 27. Segundo restaurante: 201 (si ya existe da 409; entonces usa un login)
-# @name registerB
+### 1.2 Registrar el segundo restaurante (Bea, Admin): 201 / 409
 POST {{Kuvora.Api_HostAddress}}/api/auth/register
 Content-Type: application/json
 
@@ -255,16 +36,207 @@ Content-Type: application/json
 
 ###
 
-### 28. El Admin del segundo restaurante lista su personal: 200 y SOLO aparece Bea
-GET {{Kuvora.Api_HostAddress}}/api/users
-Authorization: Bearer {{registerB.response.body.$.accessToken}}
+### 1.3 Login de Ana: 200 (guarda el token que usan las secciones 3, 4 y 5)
+# @name loginAdmin
+POST {{Kuvora.Api_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{ "email": "ana@madero.test", "password": "Prueba-12345" }
 
 ###
 
-### 29. Bea intenta crear un usuario con el email de Luis (de otro restaurante): 409
+### 1.4 Login de Bea: 200 (guarda el token que usa la sección 5)
+# @name loginB
+POST {{Kuvora.Api_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{ "email": "bea@otro.test", "password": "Prueba-12345" }
+
+###
+
+### ---- 2. VALIDACIÓN Y ERRORES DE AUTENTICACIÓN ----
+
+### 2.1 Registrar con un email que ya existe: 409
+POST {{Kuvora.Api_HostAddress}}/api/auth/register
+Content-Type: application/json
+
+{
+  "restaurantName": "Restaurante Madero",
+  "fullName": "Ana Pérez",
+  "email": "ana@madero.test",
+  "password": "Prueba-12345"
+}
+
+###
+
+### 2.2 Contraseña muy corta: 400
+POST {{Kuvora.Api_HostAddress}}/api/auth/register
+Content-Type: application/json
+
+{
+  "restaurantName": "Restaurante Corto",
+  "fullName": "Pedro Corto",
+  "email": "pedro@corto.test",
+  "password": "123"
+}
+
+###
+
+### 2.3 Contraseña incorrecta: 401
+POST {{Kuvora.Api_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{ "email": "ana@madero.test", "password": "incorrecta-123" }
+
+###
+
+### 2.4 Email que no existe: 401 (mismo cuerpo que la anterior, no revela si el email existe)
+POST {{Kuvora.Api_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{ "email": "nadie@madero.test", "password": "Prueba-12345" }
+
+###
+
+### ---- 3. TOKEN Y ACCESO BÁSICO (usa el token de la 1.3) ----
+
+### 3.1 Mi perfil con token: 200
+GET {{Kuvora.Api_HostAddress}}/api/auth/me
+Authorization: Bearer {{loginAdmin.response.body.$.accessToken}}
+
+###
+
+### 3.2 Mi perfil sin token: 401
+GET {{Kuvora.Api_HostAddress}}/api/auth/me
+
+###
+
+### 3.3 Mi restaurante como Admin: 200 ("Restaurante Madero")
+GET {{Kuvora.Api_HostAddress}}/api/tenants/current
+Authorization: Bearer {{loginAdmin.response.body.$.accessToken}}
+
+###
+
+### 3.4 Listar restaurantes ya no existe: 404
+GET {{Kuvora.Api_HostAddress}}/api/tenants
+Authorization: Bearer {{loginAdmin.response.body.$.accessToken}}
+
+###
+
+### ---- 4. PERSONAL Y ROLES (usa el token de la 1.3) ----
+
+### 4.1 El Admin crea un mozo: 201 / 409
 POST {{Kuvora.Api_HostAddress}}/api/users
 Content-Type: application/json
-Authorization: Bearer {{registerB.response.body.$.accessToken}}
+Authorization: Bearer {{loginAdmin.response.body.$.accessToken}}
+
+{
+  "fullName": "Luis Mozo",
+  "email": "luis@madero.test",
+  "password": "Mozo-12345",
+  "role": "Waiter"
+}
+
+###
+
+### 4.2 Mismo email otra vez: 409
+POST {{Kuvora.Api_HostAddress}}/api/users
+Content-Type: application/json
+Authorization: Bearer {{loginAdmin.response.body.$.accessToken}}
+
+{
+  "fullName": "Luis Mozo",
+  "email": "luis@madero.test",
+  "password": "Mozo-12345",
+  "role": "Waiter"
+}
+
+###
+
+### 4.3 Rol que no existe ("Chef"): 400
+POST {{Kuvora.Api_HostAddress}}/api/users
+Content-Type: application/json
+Authorization: Bearer {{loginAdmin.response.body.$.accessToken}}
+
+{
+  "fullName": "Otra Persona",
+  "email": "chef@madero.test",
+  "password": "Chef-12345",
+  "role": "Chef"
+}
+
+###
+
+### 4.4 Rol numérico inválido (99): 400
+POST {{Kuvora.Api_HostAddress}}/api/users
+Content-Type: application/json
+Authorization: Bearer {{loginAdmin.response.body.$.accessToken}}
+
+{
+  "fullName": "Otra Persona",
+  "email": "chef@madero.test",
+  "password": "Chef-12345",
+  "role": 99
+}
+
+###
+
+### 4.5 El Admin lista su personal: 200 (solo Ana y Luis)
+GET {{Kuvora.Api_HostAddress}}/api/users
+Authorization: Bearer {{loginAdmin.response.body.$.accessToken}}
+
+###
+
+### 4.6 Listar personal sin token: 401 (no 403)
+GET {{Kuvora.Api_HostAddress}}/api/users
+
+###
+
+### 4.7 Login del mozo: 200 (guarda el token que usan 4.8 a 4.10)
+# @name loginWaiter
+POST {{Kuvora.Api_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{ "email": "luis@madero.test", "password": "Mozo-12345" }
+
+###
+
+### 4.8 El mozo intenta listar el personal: 403 (autenticado, pero sin permiso)
+GET {{Kuvora.Api_HostAddress}}/api/users
+Authorization: Bearer {{loginWaiter.response.body.$.accessToken}}
+
+###
+
+### 4.9 El mozo consulta su perfil: 200 (role = Waiter)
+GET {{Kuvora.Api_HostAddress}}/api/auth/me
+Authorization: Bearer {{loginWaiter.response.body.$.accessToken}}
+
+###
+
+### 4.10 El mozo intenta ver el restaurante: 403
+GET {{Kuvora.Api_HostAddress}}/api/tenants/current
+Authorization: Bearer {{loginWaiter.response.body.$.accessToken}}
+
+###
+
+### ---- 5. AISLAMIENTO ENTRE RESTAURANTES (usa el token de Bea, 1.4) ----
+
+### 5.1 Bea lista su personal: 200 y SOLO aparece Bea (ni Ana ni Luis)
+GET {{Kuvora.Api_HostAddress}}/api/users
+Authorization: Bearer {{loginB.response.body.$.accessToken}}
+
+###
+
+### 5.2 Bea ve su restaurante: 200 ("Restaurante Otro")
+GET {{Kuvora.Api_HostAddress}}/api/tenants/current
+Authorization: Bearer {{loginB.response.body.$.accessToken}}
+
+###
+
+### 5.3 Bea crea un usuario con el email de Luis (de otro restaurante): 409
+POST {{Kuvora.Api_HostAddress}}/api/users
+Content-Type: application/json
+Authorization: Bearer {{loginB.response.body.$.accessToken}}
 
 {
   "fullName": "Luis Duplicado",
@@ -272,3 +244,101 @@ Authorization: Bearer {{registerB.response.body.$.accessToken}}
   "password": "Mozo-12345",
   "role": "Kitchen"
 }
+
+###
+
+### 5.4 Bea crea a su propio cocinero: 201 / 409
+POST {{Kuvora.Api_HostAddress}}/api/users
+Content-Type: application/json
+Authorization: Bearer {{loginB.response.body.$.accessToken}}
+
+{
+  "fullName": "Carlos Cocina",
+  "email": "carlos@otro.test",
+  "password": "Cocina-12345",
+  "role": "Kitchen"
+}
+
+###
+
+### 5.5 Ana vuelve a listar su personal: 200 y NO aparece Carlos (queda en el restaurante de Bea)
+GET {{Kuvora.Api_HostAddress}}/api/users
+Authorization: Bearer {{loginAdmin.response.body.$.accessToken}}
+
+###
+
+### ---- 6. REFRESH TOKENS Y LOGOUT (al final: revoca los refresh tokens de Ana) ----
+### Orden: 6.1, 6.2, 6.3, 6.4. Luego 6.5, 6.6 y 6.7 (6.5 es su propio login).
+
+### 6.1 Login de Ana para esta prueba: 200
+# @name loginR
+POST {{Kuvora.Api_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{ "email": "ana@madero.test", "password": "Prueba-12345" }
+
+###
+
+### 6.2 Refresh con el token del login: 200 (devuelve un par NUEVO)
+# @name refreshed
+POST {{Kuvora.Api_HostAddress}}/api/auth/refresh
+Content-Type: application/json
+
+{ "refreshToken": "{{loginR.response.body.$.refreshToken}}" }
+
+###
+
+### 6.3 Reutilizar el MISMO refresh token del login: 401 (y revoca todos los de Ana)
+POST {{Kuvora.Api_HostAddress}}/api/auth/refresh
+Content-Type: application/json
+
+{ "refreshToken": "{{loginR.response.body.$.refreshToken}}" }
+
+###
+
+### 6.4 El token nuevo de la 6.2 también quedó revocado por la reutilización: 401
+POST {{Kuvora.Api_HostAddress}}/api/auth/refresh
+Content-Type: application/json
+
+{ "refreshToken": "{{refreshed.response.body.$.refreshToken}}" }
+
+###
+
+### 6.5 Login de Ana para probar el logout: 200
+# @name loginL
+POST {{Kuvora.Api_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{ "email": "ana@madero.test", "password": "Prueba-12345" }
+
+###
+
+### 6.6 Logout: 204
+POST {{Kuvora.Api_HostAddress}}/api/auth/logout
+Content-Type: application/json
+
+{ "refreshToken": "{{loginL.response.body.$.refreshToken}}" }
+
+###
+
+### 6.7 Refresh después del logout: 401
+POST {{Kuvora.Api_HostAddress}}/api/auth/refresh
+Content-Type: application/json
+
+{ "refreshToken": "{{loginL.response.body.$.refreshToken}}" }
+
+###
+
+### 6.8 Refresh con basura: 401
+POST {{Kuvora.Api_HostAddress}}/api/auth/refresh
+Content-Type: application/json
+
+{ "refreshToken": "esto-no-es-un-token" }
+
+###
+
+### 6.9 Refresh sin cuerpo válido: 400
+POST {{Kuvora.Api_HostAddress}}/api/auth/refresh
+Content-Type: application/json
+
+{ }

@@ -18,8 +18,8 @@ internal sealed class AuthService(
     {
         var email = NormalizeEmail(request.Email);
 
-        // Paso 7: esta consulta llevará IgnoreQueryFilters() (el email es único global)
-        if (await db.Users.AnyAsync(u => u.Email == email, cancellationToken))
+        // El email es único en TODOS los restaurantes, por eso se salta el filtro global
+        if (await db.Users.IgnoreQueryFilters().AnyAsync(u => u.Email == email, cancellationToken))
             throw new ConflictException("Ya existe una cuenta con ese email.");
 
         var tenant = new Tenant(request.RestaurantName);
@@ -43,8 +43,9 @@ internal sealed class AuthService(
     {
         var email = NormalizeEmail(request.Email);
 
-        // Paso 7: aquí también irá IgnoreQueryFilters()
+        // La petición es anónima (aún no hay restaurante en el token): se salta el filtro global
         var user = await db.Users
+            .IgnoreQueryFilters()
             .FirstOrDefaultAsync(u => u.Email == email, cancellationToken);
 
         // Mismo error para "no existe", "está inactivo" y "contraseña incorrecta"
@@ -80,8 +81,9 @@ internal sealed class AuthService(
         if (!stored.IsActive(now))
             throw new InvalidCredentialsException();
 
-        // Paso 7: aquí también irá IgnoreQueryFilters() (la petición es anónima)
+        // Petición anónima: se salta el filtro global
         var user = await db.Users
+            .IgnoreQueryFilters()
             .FirstOrDefaultAsync(u => u.Id == stored.UserId, cancellationToken);
 
         if (user is null || !user.IsActive)

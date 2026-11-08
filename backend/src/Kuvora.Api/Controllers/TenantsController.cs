@@ -1,4 +1,5 @@
-﻿using Kuvora.Api.Authorization;
+using Kuvora.Api.Authorization;
+using Kuvora.Application.Common;
 using Kuvora.Application.Tenants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -6,29 +7,19 @@ using Microsoft.AspNetCore.Mvc;
 namespace Kuvora.Api.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/tenants")]
 [Authorize(Policy = Policies.AdminOnly)]
-public class TenantsController(ITenantService tenantService) : ControllerBase
+public class TenantsController(ITenantService tenantService, ICurrentUser currentUser) : ControllerBase
 {
-    [HttpGet]
-    public async Task<ActionResult<IReadOnlyList<TenantDto>>> GetAll(CancellationToken cancellationToken)
+    // Un restaurante solo puede ver el suyo. Crear restaurantes se hace con /api/auth/register.
+    [HttpGet("current")]
+    [ProducesResponseType<TenantDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<TenantDto>> GetCurrent(CancellationToken cancellationToken)
     {
-        return Ok(await tenantService.GetAllAsync(cancellationToken));
-    }
-
-    [HttpGet("{id:guid}")]
-    public async Task<ActionResult<TenantDto>> GetById(Guid id, CancellationToken cancellationToken)
-    {
-        var tenant = await tenantService.GetByIdAsync(id, cancellationToken);
+        var tenant = await tenantService.GetByIdAsync(currentUser.TenantId, cancellationToken);
         return tenant is null ? NotFound() : Ok(tenant);
-    }
-
-    [HttpPost]
-    public async Task<ActionResult<TenantDto>> Create(
-        CreateTenantRequest request,
-        CancellationToken cancellationToken)
-    {
-        var tenant = await tenantService.CreateAsync(request, cancellationToken);
-        return CreatedAtAction(nameof(GetById), new { id = tenant.Id }, tenant);
     }
 }

@@ -12,12 +12,9 @@ internal sealed class UserService(
 {
     public async Task<IReadOnlyList<UserDto>> GetAllAsync(CancellationToken cancellationToken)
     {
-        var tenantId = currentUser.TenantId;
-
-        // Paso 7: el filtro global de EF Core hará esta condición de forma automática
+        // Sin Where por TenantId: el filtro global de AppDbContext ya limita a mi restaurante
         var users = await db.Users
             .AsNoTracking()
-            .Where(u => u.TenantId == tenantId)
             .OrderBy(u => u.FullName)
             .Select(u => new { u.Id, u.TenantId, u.Email, u.FullName, u.Role })
             .ToListAsync(cancellationToken);
@@ -31,8 +28,8 @@ internal sealed class UserService(
     {
         var email = request.Email.Trim().ToLowerInvariant();
 
-        // Paso 7: aquí irá IgnoreQueryFilters(), porque el email es único en TODOS los restaurantes
-        if (await db.Users.AnyAsync(u => u.Email == email, cancellationToken))
+        // El email es único en TODOS los restaurantes, por eso se salta el filtro
+        if (await db.Users.IgnoreQueryFilters().AnyAsync(u => u.Email == email, cancellationToken))
             throw new ConflictException("Ya existe una cuenta con ese email.");
 
         // El nuevo usuario siempre queda en el restaurante de quien lo crea

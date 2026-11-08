@@ -1,4 +1,5 @@
 using Kuvora.Api.ErrorHandling;
+using Kuvora.Api.Extensions;
 using Kuvora.Application;
 using Kuvora.Infrastructure;
 using Serilog;
@@ -25,6 +26,8 @@ try
     builder.Services.AddInfrastructure(connectionString);
     builder.Services.AddApplication();
 
+    builder.Services.AddJwtAuthentication();
+
     builder.Services.AddProblemDetails();
     builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
@@ -40,6 +43,7 @@ try
     }
 
     app.UseHttpsRedirection();
+    app.UseAuthentication();
     app.UseAuthorization();
     app.MapControllers();
 

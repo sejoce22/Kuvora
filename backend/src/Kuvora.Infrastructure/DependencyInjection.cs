@@ -26,6 +26,9 @@ public static class DependencyInjection
         services.AddSingleton<IPasswordHasher<User>, PasswordHasher<User>>();
         services.AddSingleton<IPasswordService, PasswordService>();
 
+        services.AddSingleton(TimeProvider.System);
+        services.AddSingleton<ITokenService, JwtTokenService>();
+
         return services;
     }
 }

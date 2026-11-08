@@ -1,19 +1,81 @@
 @Kuvora.Api_HostAddress = https://localhost:7052
 
-GET {{Kuvora.Api_HostAddress}}/api/health
-
-###
-
-GET {{Kuvora.Api_HostAddress}}/api/tenants
-
-###
-
-POST {{Kuvora.Api_HostAddress}}/api/tenants
+### 1. Registrar restaurante: 201
+# @name register
+POST {{Kuvora.Api_HostAddress}}/api/auth/register
 Content-Type: application/json
 
-{ "name": "Restaurante Madero" }
-
+{
+  "restaurantName": "Restaurante Madero",
+  "fullName": "Ana Pérez",
+  "email": "ana@madero.test",
+  "password": "Prueba-12345"
+}
 
 ###
 
-GET {{Kuvora.Api_HostAddress}}/api/tenants/no-es-un-guid
+### 2. Mismo email otra vez: 409
+POST {{Kuvora.Api_HostAddress}}/api/auth/register
+Content-Type: application/json
+
+{
+  "restaurantName": "Otro",
+  "fullName": "Otra Persona",
+  "email": "ANA@madero.test",
+  "password": "Prueba-12345"
+}
+
+###
+
+### 3. Contraseña muy corta: 400
+POST {{Kuvora.Api_HostAddress}}/api/auth/register
+Content-Type: application/json
+
+{
+  "restaurantName": "Otro",
+  "fullName": "Otra Persona",
+  "email": "otra@madero.test",
+  "password": "corta"
+}
+
+###
+
+### 4. Login correcto: 200
+# @name login
+POST {{Kuvora.Api_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{ "email": "ana@madero.test", "password": "Prueba-12345" }
+
+###
+
+### 5. Contraseña incorrecta: 401
+POST {{Kuvora.Api_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{ "email": "ana@madero.test", "password": "incorrecta-123" }
+
+###
+
+### 6. Email que no existe: 401 (mismo cuerpo que la anterior)
+POST {{Kuvora.Api_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{ "email": "nadie@madero.test", "password": "Prueba-12345" }
+
+###
+
+### 7. Me con token: 200
+GET {{Kuvora.Api_HostAddress}}/api/auth/me
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+###
+
+### 8. Me sin token: 401
+GET {{Kuvora.Api_HostAddress}}/api/auth/me
+
+###
+
+### 9. Tenants con token: 200 (ojo, ver nota abajo)
+GET {{Kuvora.Api_HostAddress}}/api/tenants
+Authorization: Bearer {{login.response.body.$.accessToken}}

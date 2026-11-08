@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Kuvora.Domain.Users
+﻿namespace Kuvora.Domain.Users
 {
     public enum UserRole
     {

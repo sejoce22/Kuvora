@@ -35,6 +35,7 @@ internal sealed class JwtTokenService(IOptions<JwtOptions> options, TimeProvider
             Issuer = _options.Issuer,
             Audience = _options.Audience,
             NotBefore = now.UtcDateTime,
+            IssuedAt = now.UtcDateTime,
             Expires = expires.UtcDateTime,
             SigningCredentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256)
         };

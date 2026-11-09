@@ -1,0 +1,142 @@
+:host {
+  display: block;
+}
+
+.stage {
+  min-height: 100dvh;
+  padding: 1.25rem clamp(1rem, 4vw, 3rem) 3rem;
+  color: var(--paper);
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1.5px dashed rgb(246 243 234 / 0.25);
+
+  &__brand {
+    font: 800 1.5rem/1 var(--font-display);
+    letter-spacing: -0.04em;
+  }
+
+  &__user {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font: 400 0.85rem var(--font-mono);
+  }
+
+  &__logout {
+    padding: 0.45rem 0.9rem;
+    border: 1.5px solid var(--amber);
+    border-radius: 0.35rem;
+    background: transparent;
+    color: var(--amber);
+    font: 600 0.85rem var(--font-display);
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+
+    &:hover {
+      background: var(--amber);
+      color: var(--ink);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--amber);
+      outline-offset: 3px;
+    }
+  }
+}
+
+.welcome {
+  max-width: 56rem;
+  margin: clamp(2.5rem, 9vh, 6rem) auto 0;
+  animation: rise 0.6s ease-out both;
+}
+
+.eyebrow {
+  margin: 0 0 0.5rem;
+  font: 500 0.8rem var(--font-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--amber);
+}
+
+h1 {
+  margin: 0;
+  font: 800 clamp(2.5rem, 7vw, 4.5rem) / 0.95 var(--font-display);
+  letter-spacing: -0.045em;
+}
+
+.role {
+  margin: 1rem 0 0;
+  font: 400 0.95rem var(--font-mono);
+  color: rgb(246 243 234 / 0.7);
+
+  strong {
+    color: var(--paper);
+    font-weight: 500;
+  }
+}
+
+// Pase de cocina con las comandas de los módulos que vienen
+.pass {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 1rem;
+  margin: 3rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pass__slip {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 1rem 1.1rem 1.25rem;
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: 0 14px 24px -10px rgb(0 0 0 / 0.55);
+  opacity: 0.92;
+  animation: rise 0.6s ease-out both;
+
+  @for $i from 1 through 4 {
+    &:nth-child(#{$i}) {
+      animation-delay: #{0.15 + $i * 0.08}s;
+    }
+  }
+}
+
+.pass__name {
+  font: 700 1.25rem var(--font-display);
+  letter-spacing: -0.02em;
+}
+
+.pass__tag {
+  padding-top: 0.4rem;
+  border-top: 1.5px dashed var(--line);
+  font: 400 0.75rem var(--font-mono);
+  color: var(--muted);
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(0.75rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .welcome,
+  .pass__slip {
+    animation: none;
+  }
+}
+
+@media (max-width: 36rem) {
+  .bar__name {
+    display: none;
+  }
+}

@@ -21,7 +21,12 @@ export class Login {
   });
 
   protected readonly submitting = signal(false);
+  protected readonly showPassword = signal(false);
   protected readonly errorMessage = signal<string | null>(null);
+
+  protected togglePassword(): void {
+    this.showPassword.update((visible) => !visible);
+  }
 
   protected submit(): void {
     if (this.form.invalid) {
@@ -39,8 +44,8 @@ export class Login {
         // Mismo mensaje genérico que la API: no se revela si el email existe
         this.errorMessage.set(
           error.status === 401
-            ? 'Email o contraseña incorrectos.'
-            : 'No pudimos iniciar sesión. Inténtalo de nuevo.',
+            ? 'Email o contraseña incorrectos. Revisa los datos e inténtalo de nuevo.'
+            : 'No pudimos conectar con el servidor. Inténtalo de nuevo en unos minutos.',
         );
       },
     });

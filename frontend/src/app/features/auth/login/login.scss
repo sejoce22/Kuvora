@@ -1,24 +1,271 @@
-.login {
-  min-height: 100vh;
+:host {
+  display: block;
+}
+
+// El fondo (clase global .kitchen-bg) vive en styles.scss y se comparte con las demás pantallas
+.stage {
+  position: relative;
+  min-height: 100dvh;
   display: grid;
   place-items: center;
-  background: #f4f4f6;
+  padding: 3.5rem 1rem;
+  overflow: hidden;
 }
 
-.card {
-  width: 22rem;
+// La ranura de la impresora y la comanda que sale de ella
+.printer {
+  position: relative;
+  z-index: 1;
+  width: min(23rem, 100%);
+}
+
+.slot {
+  position: relative;
+  z-index: 2;
+  height: 0.9rem;
+  margin-inline: -0.75rem;
+  border-radius: 0.5rem;
+  background: linear-gradient(#9aa8ad, #5a6a70 55%, #2f3b40);
+  box-shadow: 0 6px 16px -2px rgb(242 163 58 / 0.6);
+}
+
+.sheet {
+  margin-top: -0.3rem;
+  filter: drop-shadow(0 22px 28px rgb(0 0 0 / 0.5)); // el borde dentado recorta box-shadow, por eso drop-shadow
+}
+
+.ticket {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  padding: 2rem;
-  background: #fff;
-  border-radius: 0.75rem;
-  box-shadow: 0 4px 16px rgb(0 0 0 / 10%);
+  gap: 1.25rem;
+  padding: 2.1rem 1.75rem 2.75rem;
+  background: var(--paper);
+  mask: conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) 50% / 14px 100%; // borde inferior rasgado
+  animation: print 1.1s steps(18, end) 0.15s both;
 }
 
-h1 { margin: 0; }
-.subtitle { margin: 0 0 1rem; color: #666; }
-input { padding: 0.6rem; border: 1px solid #ccc; border-radius: 0.4rem; }
-button { margin-top: 1rem; padding: 0.7rem; border: 0; border-radius: 0.4rem; background: #1f6feb; color: #fff; cursor: pointer; }
-button:disabled { opacity: 0.6; cursor: wait; }
-.error { margin: 0; color: #c62828; font-size: 0.85rem; }
+.head {
+  padding-bottom: 1.25rem;
+  border-bottom: 1.5px dashed var(--line);
+}
+
+.brand {
+  margin: 0;
+  font: 800 2.9rem/0.95 var(--font-display);
+  letter-spacing: -0.045em;
+}
+
+.lead {
+  margin: 0.6rem 0 0;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+// Campos como líneas a rellenar en un papel
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+
+  label {
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+}
+
+input {
+  width: 100%;
+  padding: 0.45rem 0 0.4rem;
+  border: 0;
+  border-bottom: 1.5px dashed var(--ink);
+  background: transparent;
+  color: var(--ink);
+  font: 500 1rem var(--font-mono);
+
+  &:focus {
+    outline: 0;
+    border-bottom: 2px solid var(--amber-deep);
+  }
+
+  &[aria-invalid='true'] {
+    border-bottom-color: var(--chili);
+  }
+}
+
+.secret {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.75rem;
+}
+
+.reveal {
+  padding: 0.3rem 0;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font: 500 0.8rem var(--font-mono);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+
+  &:hover {
+    color: var(--ink);
+  }
+}
+
+.hint {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--chili-dark);
+}
+
+.alert {
+  margin: 0;
+  padding: 0.65rem 0.8rem;
+  border-left: 4px solid var(--chili);
+  background: #fbe9e4;
+  color: #7a1f10;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  animation: shake 0.4s;
+}
+
+.submit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: 0.95rem 1rem;
+  border: 0;
+  border-radius: 0.35rem;
+  background: var(--tile);
+  color: var(--paper);
+  font: 700 1rem var(--font-display);
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+
+  &:hover:not(:disabled) {
+    background: var(--amber);
+    color: var(--ink);
+  }
+
+  &:disabled {
+    cursor: wait;
+    opacity: 0.85;
+  }
+
+  &[aria-busy='true']::after {
+    content: '';
+    width: 1em;
+    height: 1em;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+}
+
+.reveal:focus-visible,
+.submit:focus-visible {
+  outline: 2px solid var(--amber-deep);
+  outline-offset: 3px;
+}
+
+.foot {
+  padding-top: 1rem;
+  border-top: 1.5px dashed var(--line);
+  font: 400 0.72rem/1.4 var(--font-mono);
+  color: var(--muted);
+  text-align: center;
+}
+
+// Comandas de ambiente a los lados (solo en pantallas anchas)
+.slip {
+  --tilt: -5deg;
+  --opacity: 0.5;
+  position: absolute;
+  top: 7rem;
+  width: 11.5rem;
+  padding: 1rem 1rem 1.4rem;
+  background: #d8d3c2;
+  color: var(--ink);
+  font: 400 0.72rem/1.55 var(--font-mono);
+  opacity: var(--opacity);
+  filter: blur(0.7px);
+  transform: rotate(var(--tilt));
+  animation: settle 0.7s ease-out 1.1s both;
+
+  p {
+    margin: 0;
+  }
+
+  p.slip__title {
+    margin-bottom: 0.4rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1.5px dashed var(--line);
+    font-weight: 500;
+  }
+
+  &--left {
+    right: calc(50% + 14rem);
+  }
+
+  &--right {
+    --tilt: 4deg;
+    --opacity: 0.4;
+    left: calc(50% + 14rem);
+    top: 11rem;
+  }
+}
+
+@media (max-width: 62rem) {
+  .slip {
+    display: none;
+  }
+}
+
+@keyframes print {
+  from {
+    clip-path: inset(0 0 100% 0);
+  }
+  to {
+    clip-path: inset(0);
+  }
+}
+
+@keyframes settle {
+  from {
+    opacity: 0;
+    transform: translateY(0.75rem) rotate(var(--tilt));
+  }
+  to {
+    opacity: var(--opacity);
+    transform: translateY(0) rotate(var(--tilt));
+  }
+}
+
+@keyframes shake {
+  25% {
+    transform: translateX(-5px);
+  }
+  75% {
+    transform: translateX(5px);
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ticket,
+  .slip,
+  .alert,
+  .submit[aria-busy='true']::after {
+    animation: none;
+  }
+}

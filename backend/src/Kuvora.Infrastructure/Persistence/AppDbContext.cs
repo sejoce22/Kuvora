@@ -1,9 +1,11 @@
-using System.Reflection;
 using Kuvora.Application.Common;
+using Kuvora.Domain.Catalog;
 using Kuvora.Domain.Common;
+using Kuvora.Domain.Tables;
 using Kuvora.Domain.Tenants;
 using Kuvora.Domain.Users;
 using Microsoft.EntityFrameworkCore;
+using System.Reflection;
 
 namespace Kuvora.Infrastructure.Persistence;
 
@@ -15,6 +17,9 @@ public class AppDbContext(
     public DbSet<Tenant> Tenants => Set<Tenant>();
     public DbSet<User> Users => Set<User>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+    public DbSet<Category> Categories => Set<Category>();
+    public DbSet<Product> Products => Set<Product>();
+    public DbSet<DiningTable> DiningTables => Set<DiningTable>();
 
     // EF lee esta propiedad en CADA consulta, con el valor de la petición en curso.
     // Debe ser una propiedad del contexto: así EF la trata como parámetro y no la "congela" en el modelo.

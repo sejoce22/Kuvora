@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { Observable, catchError, map, of, tap } from 'rxjs';
+import { Observable, catchError, finalize, map, of, shareReplay, tap, throwError } from 'rxjs';
 import { LoginRequest, Session } from './auth.models';
 
 @Injectable({ providedIn: 'root' })
@@ -14,16 +14,31 @@ export class AuthService {
   readonly accessToken = computed(() => this.session()?.accessToken ?? null);
   readonly isAuthenticated = computed(() => this.session() !== null);
 
+  // Renovación en curso: si varias peticiones fallan a la vez, comparten una sola.
+  private refreshInFlight: Observable<Session> | null = null;
+
   login(request: LoginRequest): Observable<Session> {
     return this.http
       .post<Session>('/api/auth/login', request)
       .pipe(tap((session) => this.session.set(session)));
   }
 
-    refresh(): Observable<Session> {
+  refresh(): Observable<Session> {
     return this.http
       .post<Session>('/api/auth/refresh', null)
       .pipe(tap((session) => this.session.set(session)));
+  }
+
+  refreshShared(): Observable<Session> {
+    this.refreshInFlight ??= this.refresh().pipe(
+      catchError((error: unknown) => {
+        this.session.set(null); // la cookie ya no sirve: cerramos la sesión local
+        return throwError(() => error);
+      }),
+      finalize(() => (this.refreshInFlight = null)),
+      shareReplay({ bufferSize: 1, refCount: false }),
+    );
+    return this.refreshInFlight;
   }
 
   // Al arrancar la app: intenta recuperar la sesión con la cookie. Nunca falla;

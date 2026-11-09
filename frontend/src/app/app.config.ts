@@ -1,4 +1,5 @@
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { authInterceptor } from './core/auth/auth.interceptor';
 import {
   ApplicationConfig,
   inject,
@@ -14,7 +15,7 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideRouter(routes),
-    provideHttpClient(),
+    provideHttpClient(withInterceptors([authInterceptor])),
     // Antes de mostrar la primera pantalla, intenta recuperar la sesión con la cookie
     provideAppInitializer(() => firstValueFrom(inject(AuthService).restoreSession())),
   ],

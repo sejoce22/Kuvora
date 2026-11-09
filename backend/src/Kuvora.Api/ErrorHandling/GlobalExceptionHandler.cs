@@ -1,6 +1,8 @@
-﻿using Kuvora.Application.Common;
+using Kuvora.Application.Common;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 namespace Kuvora.Api.ErrorHandling;
 
@@ -16,7 +18,11 @@ public sealed class GlobalExceptionHandler(
         var (status, title) = exception switch
         {
             ConflictException => (StatusCodes.Status409Conflict, "Conflicto con el estado actual del recurso."),
+            NotFoundException => (StatusCodes.Status404NotFound, "Recurso no encontrado."),
             InvalidCredentialsException => (StatusCodes.Status401Unauthorized, "Credenciales inválidas."),
+            // Carrera: dos peticiones pasaron la validación a la vez y la base de datos frenó a la segunda
+            DbUpdateException when IsUniqueViolation(exception) =>
+                (StatusCodes.Status409Conflict, "Conflicto con el estado actual del recurso."),
             _ => (StatusCodes.Status500InternalServerError, "Ocurrió un error inesperado.")
         };
 
@@ -49,8 +55,18 @@ public sealed class GlobalExceptionHandler(
                 Status = status,
                 Title = title,
                 // Solo el mensaje de NUESTRAS excepciones de negocio, nunca el de una cualquiera
-                Detail = exception is ConflictException ? exception.Message : null
+                Detail = exception switch
+                {
+                    ConflictException or NotFoundException => exception.Message,
+                    // Texto fijo: el mensaje de Postgres trae nombres de tablas e índices
+                    DbUpdateException when IsUniqueViolation(exception) => "Ya existe un registro con esos datos.",
+                    _ => null
+                }
             }
         });
     }
+
+    // 23505 = unique_violation
+    private static bool IsUniqueViolation(Exception exception) =>
+        exception.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation };
 }

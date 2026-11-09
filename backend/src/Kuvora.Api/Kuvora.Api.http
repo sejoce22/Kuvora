@@ -313,3 +313,282 @@ POST {{Kuvora.Api_HostAddress}}/api/auth/refresh
 ### 6.8 Refresh con una cookie inventada: 401
 POST {{Kuvora.Api_HostAddress}}/api/auth/refresh
 Cookie: kuvora_refresh=esto-no-es-un-token
+
+###
+
+### ---- 7. CATÁLOGO Y MESAS (ejecuta de la 7.1 a la 7.31 en orden) ----
+### Lectura: cualquier usuario autenticado. Escritura: solo Admin. Todo filtrado por restaurante.
+
+### 7.1 Login de Ana (Admin de Madero): 200
+# @name login7Admin
+POST {{Kuvora.Api_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{ "email": "ana@madero.test", "password": "Prueba-12345" }
+
+###
+
+### 7.2 Login de Luis (Waiter de Madero): 200
+# @name login7Waiter
+POST {{Kuvora.Api_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{ "email": "luis@madero.test", "password": "Mozo-12345" }
+
+###
+
+### 7.3 Login de Bea (Admin de Otro): 200
+# @name login7B
+POST {{Kuvora.Api_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{ "email": "bea@otro.test", "password": "Prueba-12345" }
+
+###
+
+### 7.4 Sin token: 401
+GET {{Kuvora.Api_HostAddress}}/api/categories
+
+###
+
+### ---- 7A. CATEGORÍAS ----
+
+### 7.5 Ana crea la categoría "Bebidas": 201
+# @name createCategory
+POST {{Kuvora.Api_HostAddress}}/api/categories
+Authorization: Bearer {{login7Admin.response.body.$.accessToken}}
+Content-Type: application/json
+
+{ "name": "Bebidas", "sortOrder": 1 }
+
+###
+
+### 7.6 Ana repite el nombre en minúsculas: 409
+POST {{Kuvora.Api_HostAddress}}/api/categories
+Authorization: Bearer {{login7Admin.response.body.$.accessToken}}
+Content-Type: application/json
+
+{ "name": "bebidas", "sortOrder": 2 }
+
+###
+
+### 7.7 Nombre vacío: 400
+POST {{Kuvora.Api_HostAddress}}/api/categories
+Authorization: Bearer {{login7Admin.response.body.$.accessToken}}
+Content-Type: application/json
+
+{ "name": "", "sortOrder": 1 }
+
+###
+
+### 7.8 Luis (Waiter) intenta crear una categoría: 403
+POST {{Kuvora.Api_HostAddress}}/api/categories
+Authorization: Bearer {{login7Waiter.response.body.$.accessToken}}
+Content-Type: application/json
+
+{ "name": "Postres", "sortOrder": 2 }
+
+###
+
+### 7.9 Luis lista las categorías: 200 y ve "Bebidas"
+GET {{Kuvora.Api_HostAddress}}/api/categories
+Authorization: Bearer {{login7Waiter.response.body.$.accessToken}}
+
+###
+
+### 7.10 Bea lista las suyas: 200 y la lista NO trae "Bebidas" (otro restaurante)
+GET {{Kuvora.Api_HostAddress}}/api/categories
+Authorization: Bearer {{login7B.response.body.$.accessToken}}
+
+###
+
+### 7.11 Bea edita la categoría de Ana: 404 (no revela que existe)
+PUT {{Kuvora.Api_HostAddress}}/api/categories/{{createCategory.response.body.$.id}}
+Authorization: Bearer {{login7B.response.body.$.accessToken}}
+Content-Type: application/json
+
+{ "name": "Hackeada", "sortOrder": 1 }
+
+###
+
+### 7.12 Ana edita su categoría: 200
+PUT {{Kuvora.Api_HostAddress}}/api/categories/{{createCategory.response.body.$.id}}
+Authorization: Bearer {{login7Admin.response.body.$.accessToken}}
+Content-Type: application/json
+
+{ "name": "Bebidas y jugos", "sortOrder": 1 }
+
+###
+
+### ---- 7B. PRODUCTOS ----
+
+### 7.13 Ana crea un producto: 201
+# @name createProduct
+POST {{Kuvora.Api_HostAddress}}/api/products
+Authorization: Bearer {{login7Admin.response.body.$.accessToken}}
+Content-Type: application/json
+
+{
+  "categoryId": "{{createCategory.response.body.$.id}}",
+  "name": "Jugo de frambuesa",
+  "description": "Natural, 400 ml",
+  "price": 3500
+}
+
+###
+
+### 7.14 Mismo nombre en minúsculas: 409
+POST {{Kuvora.Api_HostAddress}}/api/products
+Authorization: Bearer {{login7Admin.response.body.$.accessToken}}
+Content-Type: application/json
+
+{
+  "categoryId": "{{createCategory.response.body.$.id}}",
+  "name": "jugo de frambuesa",
+  "price": 3500
+}
+
+###
+
+### 7.15 Precio negativo: 400
+POST {{Kuvora.Api_HostAddress}}/api/products
+Authorization: Bearer {{login7Admin.response.body.$.accessToken}}
+Content-Type: application/json
+
+{
+  "categoryId": "{{createCategory.response.body.$.id}}",
+  "name": "Agua",
+  "price": -1
+}
+
+###
+
+### 7.16 Sin categoría: 400
+POST {{Kuvora.Api_HostAddress}}/api/products
+Authorization: Bearer {{login7Admin.response.body.$.accessToken}}
+Content-Type: application/json
+
+{ "name": "Agua", "price": 1500 }
+
+###
+
+### 7.17 Categoría que no existe: 404
+POST {{Kuvora.Api_HostAddress}}/api/products
+Authorization: Bearer {{login7Admin.response.body.$.accessToken}}
+Content-Type: application/json
+
+{
+  "categoryId": "00000000-0000-0000-0000-000000000001",
+  "name": "Agua",
+  "price": 1500
+}
+
+###
+
+### 7.18 Bea crea un producto en la categoría de Ana: 404
+POST {{Kuvora.Api_HostAddress}}/api/products
+Authorization: Bearer {{login7B.response.body.$.accessToken}}
+Content-Type: application/json
+
+{
+  "categoryId": "{{createCategory.response.body.$.id}}",
+  "name": "Colado",
+  "price": 1000
+}
+
+###
+
+### 7.19 Luis (Waiter) intenta crear un producto: 403
+POST {{Kuvora.Api_HostAddress}}/api/products
+Authorization: Bearer {{login7Waiter.response.body.$.accessToken}}
+Content-Type: application/json
+
+{
+  "categoryId": "{{createCategory.response.body.$.id}}",
+  "name": "Agua",
+  "price": 1500
+}
+
+###
+
+### 7.20 Luis lista los productos filtrando por categoría: 200 y ve el jugo
+GET {{Kuvora.Api_HostAddress}}/api/products?categoryId={{createCategory.response.body.$.id}}
+Authorization: Bearer {{login7Waiter.response.body.$.accessToken}}
+
+###
+
+### 7.21 Ana no puede desactivar la categoría mientras tenga productos activos: 409
+POST {{Kuvora.Api_HostAddress}}/api/categories/{{createCategory.response.body.$.id}}/deactivate
+Authorization: Bearer {{login7Admin.response.body.$.accessToken}}
+
+###
+
+### 7.22 Ana desactiva el producto: 200 (isActive false)
+POST {{Kuvora.Api_HostAddress}}/api/products/{{createProduct.response.body.$.id}}/deactivate
+Authorization: Bearer {{login7Admin.response.body.$.accessToken}}
+
+###
+
+### 7.23 Luis pide includeInactive=true: 200 pero NO ve el producto inactivo (el parámetro se ignora)
+GET {{Kuvora.Api_HostAddress}}/api/products?includeInactive=true
+Authorization: Bearer {{login7Waiter.response.body.$.accessToken}}
+
+###
+
+### 7.24 Ana pide includeInactive=true: 200 y SÍ ve el producto inactivo
+GET {{Kuvora.Api_HostAddress}}/api/products?includeInactive=true
+Authorization: Bearer {{login7Admin.response.body.$.accessToken}}
+
+###
+
+### 7.25 Ana desactiva la categoría (ya sin productos activos): 200
+POST {{Kuvora.Api_HostAddress}}/api/categories/{{createCategory.response.body.$.id}}/deactivate
+Authorization: Bearer {{login7Admin.response.body.$.accessToken}}
+
+###
+
+### 7.26 Ana intenta activar el producto con su categoría inactiva: 409
+POST {{Kuvora.Api_HostAddress}}/api/products/{{createProduct.response.body.$.id}}/activate
+Authorization: Bearer {{login7Admin.response.body.$.accessToken}}
+
+###
+
+### 7.27 Ana reactiva la categoría: 200
+POST {{Kuvora.Api_HostAddress}}/api/categories/{{createCategory.response.body.$.id}}/activate
+Authorization: Bearer {{login7Admin.response.body.$.accessToken}}
+
+###
+
+### ---- 7C. MESAS ----
+
+### 7.28 Ana crea la mesa "Mesa 1" en "Terraza": 201
+# @name createTable
+POST {{Kuvora.Api_HostAddress}}/api/tables
+Authorization: Bearer {{login7Admin.response.body.$.accessToken}}
+Content-Type: application/json
+
+{ "name": "Mesa 1", "capacity": 4, "zone": "Terraza" }
+
+###
+
+### 7.29 Nombre repetido: 409
+POST {{Kuvora.Api_HostAddress}}/api/tables
+Authorization: Bearer {{login7Admin.response.body.$.accessToken}}
+Content-Type: application/json
+
+{ "name": "mesa 1", "capacity": 2 }
+
+###
+
+### 7.30 Capacidad fuera de rango (0 y 51): 400
+POST {{Kuvora.Api_HostAddress}}/api/tables
+Authorization: Bearer {{login7Admin.response.body.$.accessToken}}
+Content-Type: application/json
+
+{ "name": "Mesa 2", "capacity": 0 }
+
+###
+
+### 7.31 Luis (Waiter) lista las mesas: 200. Y Luis intentando crear una: 403 (cambia el método para probarlo)
+GET {{Kuvora.Api_HostAddress}}/api/tables
+Authorization: Bearer {{login7Waiter.response.body.$.accessToken}}

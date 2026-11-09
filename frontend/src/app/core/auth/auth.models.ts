@@ -18,3 +18,11 @@ export interface LoginRequest {
   email: string;
   password: string;
 }
+
+// Nombres para mostrar en pantalla; el valor interno (Role) viene tal cual del backend.
+export const ROLE_LABELS: Record<Role, string> = {
+  Admin: 'Administrador',
+  Waiter: 'Mesero',
+  Kitchen: 'Cocina',
+  Cashier: 'Cajero',
+};

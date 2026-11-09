@@ -1,5 +1,5 @@
 import { Component, computed, inject } from '@angular/core';
-import { Router } from '@angular/router';
+import { ROLE_LABELS } from '../../core/auth/auth.models';
 import { AuthService } from '../../core/auth/auth.service';
 
 @Component({
@@ -8,15 +8,15 @@ import { AuthService } from '../../core/auth/auth.service';
   styleUrl: './home.scss',
 })
 export class Home {
-  protected readonly auth = inject(AuthService);
-  private readonly router = inject(Router);
+  private readonly auth = inject(AuthService);
 
   protected readonly firstName = computed(() => this.auth.user()?.fullName.split(' ')[0] ?? '');
 
+  protected readonly roleLabel = computed(() => {
+    const role = this.auth.user()?.role;
+    return role ? ROLE_LABELS[role] : '';
+  });
+
   // Módulos que irán llegando en las próximas fases (solo decorativos por ahora)
   protected readonly upcoming = ['Mesas', 'Comandas', 'Cocina', 'Caja'];
-
-  protected logout(): void {
-    this.auth.logout().subscribe(() => void this.router.navigateByUrl('/login'));
-  }
 }

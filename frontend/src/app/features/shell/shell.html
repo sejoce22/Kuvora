@@ -1,0 +1,23 @@
+<div class="shell kitchen-bg">
+  <header class="bar">
+    <a class="bar__brand" routerLink="/">Kuvora</a>
+
+    <nav class="bar__nav" aria-label="Principal">
+      <a routerLink="/" routerLinkActive="is-active" [routerLinkActiveOptions]="{ exact: true }">
+        Inicio
+      </a>
+      @if (isAdmin()) {
+        <a routerLink="/usuarios" routerLinkActive="is-active">Usuarios</a>
+      }
+    </nav>
+
+    <div class="bar__user">
+      <span class="bar__name">{{ auth.user()?.fullName }}</span>
+      <button type="button" class="bar__logout" (click)="logout()">Cerrar sesión</button>
+    </div>
+  </header>
+
+  <main class="content">
+    <router-outlet />
+  </main>
+</div>

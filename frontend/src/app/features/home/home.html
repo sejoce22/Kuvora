@@ -1,24 +1,14 @@
-<main class="stage kitchen-bg">
-  <header class="bar">
-    <span class="bar__brand">Kuvora</span>
-    <div class="bar__user">
-      <span class="bar__name">{{ auth.user()?.fullName }}</span>
-      <button type="button" class="bar__logout" (click)="logout()">Cerrar sesión</button>
-    </div>
-  </header>
+<section class="welcome">
+  <p class="eyebrow">Turno abierto</p>
+  <h1>Hola, {{ firstName() }}</h1>
+  <p class="role">Rol: <strong>{{ roleLabel() }}</strong></p>
 
-  <section class="welcome">
-    <p class="eyebrow">Turno abierto</p>
-    <h1>Hola, {{ firstName() }}</h1>
-    <p class="role">Rol: <strong>{{ auth.user()?.role }}</strong></p>
-
-    <ul class="pass" aria-label="Módulos próximos">
-      @for (name of upcoming; track name) {
-        <li class="pass__slip">
-          <span class="pass__name">{{ name }}</span>
-          <span class="pass__tag">Próximamente</span>
-        </li>
-      }
-    </ul>
-  </section>
-</main>
+  <ul class="pass" aria-label="Módulos próximos">
+    @for (name of upcoming; track name) {
+      <li class="pass__slip">
+        <span class="pass__name">{{ name }}</span>
+        <span class="pass__tag">Próximamente</span>
+      </li>
+    }
+  </ul>
+</section>

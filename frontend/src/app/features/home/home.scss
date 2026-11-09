@@ -2,54 +2,6 @@
   display: block;
 }
 
-.stage {
-  min-height: 100dvh;
-  padding: 1.25rem clamp(1rem, 4vw, 3rem) 3rem;
-  color: var(--paper);
-}
-
-.bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding-bottom: 1rem;
-  border-bottom: 1.5px dashed rgb(246 243 234 / 0.25);
-
-  &__brand {
-    font: 800 1.5rem/1 var(--font-display);
-    letter-spacing: -0.04em;
-  }
-
-  &__user {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    font: 400 0.85rem var(--font-mono);
-  }
-
-  &__logout {
-    padding: 0.45rem 0.9rem;
-    border: 1.5px solid var(--amber);
-    border-radius: 0.35rem;
-    background: transparent;
-    color: var(--amber);
-    font: 600 0.85rem var(--font-display);
-    cursor: pointer;
-    transition: background 0.2s, color 0.2s;
-
-    &:hover {
-      background: var(--amber);
-      color: var(--ink);
-    }
-
-    &:focus-visible {
-      outline: 2px solid var(--amber);
-      outline-offset: 3px;
-    }
-  }
-}
-
 .welcome {
   max-width: 56rem;
   margin: clamp(2.5rem, 9vh, 6rem) auto 0;
@@ -135,8 +87,3 @@ h1 {
   }
 }
 
-@media (max-width: 36rem) {
-  .bar__name {
-    display: none;
-  }
-}

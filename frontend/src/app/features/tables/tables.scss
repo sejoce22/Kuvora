@@ -1,0 +1,263 @@
+:host {
+  display: block;
+}
+
+.salon {
+  max-width: 56rem;
+  margin: clamp(2rem, 7vh, 4rem) auto 0;
+  animation: rise 0.6s ease-out both;
+}
+
+.eyebrow {
+  margin: 0 0 0.5rem;
+  font: 500 0.8rem var(--font-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--amber);
+}
+
+h1 {
+  margin: 0;
+  color: var(--paper);
+  font: 800 clamp(2rem, 5vw, 3rem) / 1 var(--font-display);
+  letter-spacing: -0.04em;
+}
+
+h2 {
+  margin: 0 0 1rem;
+  font: 800 1.3rem var(--font-display);
+  letter-spacing: -0.02em;
+}
+
+// ---- Botones ----
+.actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.btn {
+  padding: 0.5rem 1rem;
+  border: 1.5px solid transparent;
+  border-radius: 0.35rem;
+  font: 600 0.85rem var(--font-display);
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  &--amber {
+    background: var(--amber);
+    color: var(--ink);
+
+    &:hover:not(:disabled) {
+      background: #ffb85a;
+    }
+  }
+
+  &--dark {
+    background: var(--tile);
+    color: var(--paper);
+
+    &:hover:not(:disabled) {
+      background: var(--chili-dark);
+    }
+  }
+
+  &--ghost {
+    border-color: var(--ink);
+    background: transparent;
+    color: var(--ink);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--amber);
+    outline-offset: 3px;
+  }
+}
+
+// ---- Formulario en papel de comanda ----
+.sheet {
+  margin-top: 1.25rem;
+  padding: 1.25rem;
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: 0 14px 24px -10px rgb(0 0 0 / 0.55);
+}
+
+.editor {
+  max-width: 30rem;
+}
+
+.editor__buttons {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.field {
+  margin-bottom: 0.9rem;
+
+  label {
+    display: block;
+    margin-bottom: 0.3rem;
+    color: var(--muted);
+    font: 600 0.72rem var(--font-mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  input {
+    width: 100%;
+    padding: 0.55rem 0.65rem;
+    border: 0;
+    border-bottom: 2px solid var(--ink);
+    background: rgb(22 26 27 / 0.05);
+    color: var(--ink);
+    font: 400 0.95rem var(--font-mono);
+
+    &:focus-visible {
+      outline: 2px solid var(--amber-deep);
+      outline-offset: 2px;
+    }
+
+    &[aria-invalid='true'] {
+      border-bottom-color: var(--chili);
+    }
+  }
+}
+
+.hint {
+  margin: 0.3rem 0 0;
+  color: var(--chili-dark);
+  font: 400 0.8rem var(--font-mono);
+}
+
+.alert {
+  margin: 0.5rem 0 0;
+  padding: 0.7rem 0.9rem;
+  border-left: 4px solid var(--chili);
+  background: #fbe9e4;
+  color: #7a1f10;
+  font: 400 0.85rem var(--font-mono);
+}
+
+// ---- Zonas y mesas ----
+.zone {
+  margin-top: 2rem;
+
+  &__title {
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1.5px dashed rgb(246 243 234 / 0.25);
+    color: var(--paper);
+    font: 600 0.85rem var(--font-mono);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(10.5rem, 1fr));
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+// Cada mesa es un papelito de comanda
+.table {
+  padding: 1rem 1rem 0.85rem;
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: 0 10px 18px -10px rgb(0 0 0 / 0.6);
+
+  &.is-off {
+    opacity: 0.6;
+  }
+
+  &__name {
+    margin: 0;
+    font: 800 1.35rem / 1.1 var(--font-display);
+    letter-spacing: -0.02em;
+  }
+
+  &__capacity {
+    margin: 0.4rem 0 0;
+    padding-top: 0.4rem;
+    border-top: 1.5px dashed var(--line);
+    color: var(--muted);
+    font: 500 0.8rem var(--font-mono);
+  }
+
+  &__badge {
+    display: inline-block;
+    margin: 0.5rem 0 0;
+    padding: 0.1rem 0.45rem;
+    border: 1.5px solid var(--chili);
+    color: var(--chili-dark);
+    font: 700 0.7rem var(--font-mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  &__actions {
+    display: flex;
+    gap: 0.9rem;
+    margin-top: 0.7rem;
+  }
+}
+
+.link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--amber-deep);
+  font: 600 0.8rem var(--font-mono);
+  text-decoration: underline;
+  cursor: pointer;
+
+  &:hover {
+    color: var(--chili-dark);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--amber-deep);
+    outline-offset: 3px;
+  }
+}
+
+.state {
+  margin-top: 2rem;
+  font: 400 0.95rem var(--font-mono);
+  color: rgb(246 243 234 / 0.75);
+
+  &--error {
+    max-width: 28rem;
+    padding: 0.9rem 1rem;
+    border-left: 4px solid var(--chili);
+    background: #fbe9e4;
+    color: #7a1f10;
+
+    p {
+      margin: 0 0 0.75rem;
+    }
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(0.75rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .salon {
+    animation: none;
+  }
+}

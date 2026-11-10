@@ -18,5 +18,5 @@ export class Home {
   });
 
   // Módulos que irán llegando en las próximas fases (solo decorativos por ahora)
-  protected readonly upcoming = ['Mesas', 'Comandas', 'Cocina', 'Caja'];
+  protected readonly upcoming = ['Comandas', 'Cocina', 'Caja'];
 }

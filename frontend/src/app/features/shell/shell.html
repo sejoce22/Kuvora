@@ -6,6 +6,8 @@
       <a routerLink="/" routerLinkActive="is-active" [routerLinkActiveOptions]="{ exact: true }">
         Inicio
       </a>
+      <a routerLink="/catalogo" routerLinkActive="is-active">Catálogo</a>
+      <a routerLink="/mesas" routerLinkActive="is-active">Mesas</a>
       @if (isAdmin()) {
         <a routerLink="/usuarios" routerLinkActive="is-active">Usuarios</a>
       }

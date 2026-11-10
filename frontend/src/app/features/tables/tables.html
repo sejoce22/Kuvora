@@ -1,0 +1,122 @@
+<section class="salon">
+  <p class="eyebrow">Salón</p>
+  <h1>Mesas</h1>
+
+  @if (loading()) {
+    <p class="state" role="status">Cargando las mesas…</p>
+  } @else if (failed()) {
+    <div class="state state--error" role="alert">
+      <p>No pudimos cargar las mesas.</p>
+      <button type="button" class="btn btn--dark" (click)="load()">Reintentar</button>
+    </div>
+  } @else {
+    @if (canEdit()) {
+      <div class="actions">
+        <button type="button" class="btn btn--amber" (click)="newTable()">Nueva mesa</button>
+      </div>
+    }
+
+    @if (actionError(); as message) {
+      <p class="state state--error" role="alert">{{ message }}</p>
+    }
+
+    @if (editingId() !== undefined) {
+      <form class="editor sheet" [formGroup]="form" (ngSubmit)="save()" novalidate>
+        <h2>{{ editingId() === null ? 'Nueva mesa' : 'Editar mesa' }}</h2>
+
+        <div class="field">
+          <label for="table-name">Nombre</label>
+          <input
+            id="table-name"
+            type="text"
+            formControlName="name"
+            [attr.maxlength]="tableNameMax"
+            [attr.aria-invalid]="form.controls.name.touched && form.controls.name.invalid"
+          />
+          @if (form.controls.name.touched && form.controls.name.invalid) {
+            <p class="hint">Escribe un nombre (máximo {{ tableNameMax }} caracteres).</p>
+          }
+        </div>
+
+        <div class="field">
+          <label for="table-capacity">Capacidad (personas)</label>
+          <input
+            id="table-capacity"
+            type="number"
+            step="1"
+            inputmode="numeric"
+            [attr.min]="minCapacity"
+            [attr.max]="maxCapacity"
+            formControlName="capacity"
+            [attr.aria-invalid]="form.controls.capacity.touched && form.controls.capacity.invalid"
+          />
+          @if (form.controls.capacity.touched && form.controls.capacity.invalid) {
+            <p class="hint">Usa un número entero entre {{ minCapacity }} y {{ maxCapacity }}.</p>
+          }
+        </div>
+
+        <div class="field">
+          <label for="table-zone">Zona (opcional)</label>
+          <input
+            id="table-zone"
+            type="text"
+            list="zone-options"
+            formControlName="zone"
+            [attr.maxlength]="tableZoneMax"
+            [attr.aria-invalid]="form.controls.zone.touched && form.controls.zone.invalid"
+          />
+          <datalist id="zone-options">
+            @for (zone of zoneNames(); track zone) {
+              <option [value]="zone"></option>
+            }
+          </datalist>
+        </div>
+
+        @if (formError(); as message) {
+          <p class="alert" role="alert">{{ message }}</p>
+        }
+
+        <div class="editor__buttons">
+          <button type="submit" class="btn btn--dark" [disabled]="saving()" [attr.aria-busy]="saving()">
+            {{ saving() ? 'Guardando…' : 'Guardar' }}
+          </button>
+          <button type="button" class="btn btn--ghost" (click)="cancel()">Cancelar</button>
+        </div>
+      </form>
+    }
+
+    @if (zones().length === 0) {
+      <p class="state">Aún no hay mesas.</p>
+    }
+
+    @for (group of zones(); track group.zone) {
+      <section class="zone">
+        <h2 class="zone__title">{{ group.zone ?? 'Sin zona' }}</h2>
+
+        <ul class="grid">
+          @for (table of group.tables; track table.id) {
+            <li class="table" [class.is-off]="!table.isActive">
+              <p class="table__name">{{ table.name }}</p>
+              <p class="table__capacity">
+                {{ table.capacity }} {{ table.capacity === 1 ? 'persona' : 'personas' }}
+              </p>
+
+              @if (!table.isActive) {
+                <p class="table__badge">Inactiva</p>
+              }
+
+              @if (canEdit()) {
+                <div class="table__actions">
+                  <button type="button" class="link" (click)="editTable(table)">Editar</button>
+                  <button type="button" class="link" (click)="toggle(table)">
+                    {{ table.isActive ? 'Desactivar' : 'Activar' }}
+                  </button>
+                </div>
+              }
+            </li>
+          }
+        </ul>
+      </section>
+    }
+  }
+</section>

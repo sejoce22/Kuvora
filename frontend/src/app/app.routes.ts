@@ -19,6 +19,16 @@ export const routes: Routes = [
         loadComponent: () => import('./features/home/home').then((m) => m.Home),
       },
       {
+        // Cualquier usuario autenticado puede ver el catálogo; solo el Admin ve los botones de edición.
+        path: 'catalogo',
+        loadComponent: () => import('./features/catalog/catalog').then((m) => m.Catalog),
+      },
+      {
+        // Cualquier usuario autenticado puede ver las mesas; solo el Admin ve los botones de edición.
+        path: 'mesas',
+        loadComponent: () => import('./features/tables/tables').then((m) => m.Tables),
+      },
+      {
         path: 'usuarios',
         canActivate: [roleGuard('Admin')],
         loadComponent: () => import('./features/users/users').then((m) => m.Users),

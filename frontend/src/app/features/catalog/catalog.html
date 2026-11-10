@@ -1,0 +1,230 @@
+<section class="carta">
+  <p class="eyebrow">Carta</p>
+  <h1>Catálogo</h1>
+
+  @if (loading()) {
+    <p class="state" role="status">Cargando el catálogo…</p>
+  } @else if (failed()) {
+    <div class="state state--error" role="alert">
+      <p>No pudimos cargar el catálogo.</p>
+      <button type="button" class="btn btn--dark" (click)="load()">Reintentar</button>
+    </div>
+  } @else {
+    @if (canEdit()) {
+      <div class="actions">
+        <button type="button" class="btn btn--amber" (click)="newCategory()">Nueva categoría</button>
+        <button
+          type="button"
+          class="btn btn--amber"
+          [disabled]="activeCategories().length === 0"
+          (click)="newProduct()"
+        >
+          Nuevo producto
+        </button>
+      </div>
+    }
+
+    @if (actionError(); as message) {
+      <p class="state state--error" role="alert">{{ message }}</p>
+    }
+
+    @if (editor(); as current) {
+      <div class="editor sheet">
+        @if (current.kind === 'category') {
+          <form [formGroup]="categoryForm" (ngSubmit)="saveCategory()" novalidate>
+            <h2>{{ current.id ? 'Editar categoría' : 'Nueva categoría' }}</h2>
+
+            <div class="field">
+              <label for="category-name">Nombre</label>
+              <input
+                id="category-name"
+                type="text"
+                formControlName="name"
+                [attr.maxlength]="categoryNameMax"
+                [attr.aria-invalid]="categoryForm.controls.name.touched && categoryForm.controls.name.invalid"
+              />
+              @if (categoryForm.controls.name.touched && categoryForm.controls.name.invalid) {
+                <p class="hint">Escribe un nombre (máximo {{ categoryNameMax }} caracteres).</p>
+              }
+            </div>
+
+            <div class="field">
+              <label for="category-order">Orden</label>
+              <input
+                id="category-order"
+                type="number"
+                min="0"
+                step="1"
+                inputmode="numeric"
+                formControlName="sortOrder"
+                [attr.aria-invalid]="categoryForm.controls.sortOrder.touched && categoryForm.controls.sortOrder.invalid"
+              />
+              @if (categoryForm.controls.sortOrder.touched && categoryForm.controls.sortOrder.invalid) {
+                <p class="hint">Usa un número entero desde 0.</p>
+              }
+            </div>
+
+            @if (formError(); as message) {
+              <p class="alert" role="alert">{{ message }}</p>
+            }
+
+            <div class="editor__buttons">
+              <button type="submit" class="btn btn--dark" [disabled]="saving()" [attr.aria-busy]="saving()">
+                {{ saving() ? 'Guardando…' : 'Guardar' }}
+              </button>
+              <button type="button" class="btn btn--ghost" (click)="cancel()">Cancelar</button>
+            </div>
+          </form>
+        } @else {
+          <form [formGroup]="productForm" (ngSubmit)="saveProduct()" novalidate>
+            <h2>{{ current.id ? 'Editar producto' : 'Nuevo producto' }}</h2>
+
+            <div class="field">
+              <label for="product-category">Categoría</label>
+              <select
+                id="product-category"
+                formControlName="categoryId"
+                [attr.aria-invalid]="productForm.controls.categoryId.touched && productForm.controls.categoryId.invalid"
+              >
+                @for (category of activeCategories(); track category.id) {
+                  <option [value]="category.id">{{ category.name }}</option>
+                }
+              </select>
+              @if (productForm.controls.categoryId.touched && productForm.controls.categoryId.invalid) {
+                <p class="hint">Elige una categoría.</p>
+              }
+            </div>
+
+            <div class="field">
+              <label for="product-name">Nombre</label>
+              <input
+                id="product-name"
+                type="text"
+                formControlName="name"
+                [attr.maxlength]="productNameMax"
+                [attr.aria-invalid]="productForm.controls.name.touched && productForm.controls.name.invalid"
+              />
+              @if (productForm.controls.name.touched && productForm.controls.name.invalid) {
+                <p class="hint">Escribe un nombre (máximo {{ productNameMax }} caracteres).</p>
+              }
+            </div>
+
+            <div class="field">
+              <label for="product-description">Descripción (opcional)</label>
+              <textarea
+                id="product-description"
+                rows="2"
+                formControlName="description"
+                [attr.maxlength]="productDescriptionMax"
+              ></textarea>
+            </div>
+
+            <div class="field">
+              <label for="product-price">Precio (pesos)</label>
+              <input
+                id="product-price"
+                type="number"
+                min="0"
+                step="1"
+                inputmode="numeric"
+                formControlName="price"
+                [attr.aria-invalid]="productForm.controls.price.touched && productForm.controls.price.invalid"
+              />
+              @if (productForm.controls.price.touched && productForm.controls.price.invalid) {
+                <p class="hint">Usa un número entero en pesos, sin decimales.</p>
+              }
+            </div>
+
+            @if (formError(); as message) {
+              <p class="alert" role="alert">{{ message }}</p>
+            }
+
+            <div class="editor__buttons">
+              <button type="submit" class="btn btn--dark" [disabled]="saving()" [attr.aria-busy]="saving()">
+                {{ saving() ? 'Guardando…' : 'Guardar' }}
+              </button>
+              <button type="button" class="btn btn--ghost" (click)="cancel()">Cancelar</button>
+            </div>
+          </form>
+        }
+      </div>
+    }
+
+    <nav class="chips" aria-label="Categorías">
+      <button
+        type="button"
+        class="chip"
+        [class.is-active]="selectedCategoryId() === null"
+        [attr.aria-pressed]="selectedCategoryId() === null"
+        (click)="select(null)"
+      >
+        Todas
+      </button>
+      @for (category of categories(); track category.id) {
+        <button
+          type="button"
+          class="chip"
+          [class.is-active]="selectedCategoryId() === category.id"
+          [class.is-off]="!category.isActive"
+          [attr.aria-pressed]="selectedCategoryId() === category.id"
+          (click)="select(category.id)"
+        >
+          {{ category.name }}@if (!category.isActive) {
+            <span> (inactiva)</span>
+          }
+        </button>
+      }
+    </nav>
+
+    @if (canEdit() && selectedCategory(); as category) {
+      <div class="actions actions--category">
+        <button type="button" class="btn btn--ghost-light" (click)="editCategory(category)">
+          Editar categoría
+        </button>
+        <button type="button" class="btn btn--ghost-light" (click)="toggleCategory(category)">
+          {{ category.isActive ? 'Desactivar categoría' : 'Activar categoría' }}
+        </button>
+      </div>
+    }
+
+    <div class="sheet">
+      @if (visibleProducts().length === 0) {
+        <p class="empty">
+          {{ selectedCategoryId() === null ? 'Aún no hay productos.' : 'No hay productos en esta categoría.' }}
+        </p>
+      } @else {
+        <ul class="menu" aria-label="Productos">
+          @for (product of visibleProducts(); track product.id) {
+            <li class="dish" [class.is-off]="!product.isActive">
+              <div class="dish__line">
+                <span class="dish__name">{{ product.name }}</span>
+                <span class="dish__leader" aria-hidden="true"></span>
+                <span class="dish__price">{{ formatPrice(product.price) }}</span>
+              </div>
+
+              @if (product.description) {
+                <p class="dish__desc">{{ product.description }}</p>
+              }
+
+              <p class="dish__meta">
+                {{ product.categoryName }}
+                @if (!product.isActive) {
+                  <span class="badge">Inactivo</span>
+                }
+              </p>
+
+              @if (canEdit()) {
+                <div class="dish__actions">
+                  <button type="button" class="link" (click)="editProduct(product)">Editar</button>
+                  <button type="button" class="link" (click)="toggleProduct(product)">
+                    {{ product.isActive ? 'Desactivar' : 'Activar' }}
+                  </button>
+                </div>
+              }
+            </li>
+          }
+        </ul>
+      }
+    </div>
+  }
+</section>

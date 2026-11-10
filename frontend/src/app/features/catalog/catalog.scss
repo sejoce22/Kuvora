@@ -1,0 +1,333 @@
+:host {
+  display: block;
+}
+
+.carta {
+  max-width: 56rem;
+  margin: clamp(2rem, 7vh, 4rem) auto 0;
+  animation: rise 0.6s ease-out both;
+}
+
+.eyebrow {
+  margin: 0 0 0.5rem;
+  font: 500 0.8rem var(--font-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--amber);
+}
+
+h1 {
+  margin: 0;
+  color: var(--paper);
+  font: 800 clamp(2rem, 5vw, 3rem) / 1 var(--font-display);
+  letter-spacing: -0.04em;
+}
+
+h2 {
+  margin: 0 0 1rem;
+  font: 800 1.3rem var(--font-display);
+  letter-spacing: -0.02em;
+}
+
+// ---- Botones ----
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+
+  &--category {
+    margin-top: 0.9rem;
+  }
+}
+
+.btn {
+  padding: 0.5rem 1rem;
+  border: 1.5px solid transparent;
+  border-radius: 0.35rem;
+  font: 600 0.85rem var(--font-display);
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  &--amber {
+    background: var(--amber);
+    color: var(--ink);
+
+    &:hover:not(:disabled) {
+      background: #ffb85a;
+    }
+  }
+
+  &--dark {
+    background: var(--tile);
+    color: var(--paper);
+
+    &:hover:not(:disabled) {
+      background: var(--chili-dark);
+    }
+  }
+
+  &--ghost {
+    border-color: var(--ink);
+    background: transparent;
+    color: var(--ink);
+  }
+
+  &--ghost-light {
+    border-color: rgb(246 243 234 / 0.4);
+    background: transparent;
+    color: var(--paper);
+
+    &:hover {
+      border-color: var(--amber);
+      color: var(--amber);
+    }
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--amber);
+    outline-offset: 3px;
+  }
+}
+
+// ---- Categorías ----
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+}
+
+.chip {
+  padding: 0.4rem 0.9rem;
+  border: 1.5px solid rgb(246 243 234 / 0.35);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--paper);
+  font: 500 0.82rem var(--font-mono);
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+
+  &:hover {
+    border-color: var(--amber);
+  }
+
+  &.is-active {
+    border-color: var(--amber);
+    background: var(--amber);
+    color: var(--ink);
+  }
+
+  &.is-off {
+    border-style: dashed;
+    opacity: 0.7;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--amber);
+    outline-offset: 3px;
+  }
+}
+
+// ---- Papel de comanda (lista y formularios) ----
+.sheet {
+  margin-top: 1.25rem;
+  padding: 0.75rem 1.25rem 1rem;
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: 0 14px 24px -10px rgb(0 0 0 / 0.55);
+}
+
+.editor {
+  padding-top: 1.25rem;
+  max-width: 30rem;
+}
+
+.editor__buttons {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.field {
+  margin-bottom: 0.9rem;
+
+  label {
+    display: block;
+    margin-bottom: 0.3rem;
+    color: var(--muted);
+    font: 600 0.72rem var(--font-mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  input,
+  select,
+  textarea {
+    width: 100%;
+    padding: 0.55rem 0.65rem;
+    border: 0;
+    border-bottom: 2px solid var(--ink);
+    background: rgb(22 26 27 / 0.05);
+    color: var(--ink);
+    font: 400 0.95rem var(--font-mono);
+
+    &:focus-visible {
+      outline: 2px solid var(--amber-deep);
+      outline-offset: 2px;
+    }
+
+    &[aria-invalid='true'] {
+      border-bottom-color: var(--chili);
+    }
+  }
+
+  textarea {
+    resize: vertical;
+  }
+}
+
+.hint {
+  margin: 0.3rem 0 0;
+  color: var(--chili-dark);
+  font: 400 0.8rem var(--font-mono);
+}
+
+.alert {
+  margin: 0.5rem 0 0;
+  padding: 0.7rem 0.9rem;
+  border-left: 4px solid var(--chili);
+  background: #fbe9e4;
+  color: #7a1f10;
+  font: 400 0.85rem var(--font-mono);
+}
+
+// ---- Lista de productos: una línea de carta por producto ----
+.menu {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dish {
+  padding: 0.9rem 0;
+  border-bottom: 1.5px dashed var(--line);
+
+  &:last-child {
+    border-bottom: 0;
+  }
+
+  &.is-off {
+    opacity: 0.6;
+  }
+
+  &__line {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+  }
+
+  &__name {
+    font: 700 1.05rem var(--font-display);
+  }
+
+  // Línea punteada entre el nombre y el precio, como en una carta impresa
+  &__leader {
+    flex: 1;
+    border-bottom: 2px dotted var(--line);
+    transform: translateY(-0.2rem);
+  }
+
+  &__price {
+    font: 600 1rem var(--font-mono);
+  }
+
+  &__desc {
+    margin: 0.25rem 0 0;
+    color: var(--muted);
+    font: 400 0.85rem var(--font-mono);
+  }
+
+  &__meta {
+    margin: 0.35rem 0 0;
+    color: var(--muted);
+    font: 500 0.72rem var(--font-mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  &__actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 0.5rem;
+  }
+}
+
+.badge {
+  margin-left: 0.5rem;
+  padding: 0.1rem 0.45rem;
+  border: 1.5px solid var(--chili);
+  color: var(--chili-dark);
+  font-weight: 700;
+}
+
+.link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--amber-deep);
+  font: 600 0.82rem var(--font-mono);
+  text-decoration: underline;
+  cursor: pointer;
+
+  &:hover {
+    color: var(--chili-dark);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--amber-deep);
+    outline-offset: 3px;
+  }
+}
+
+.empty {
+  margin: 1rem 0;
+  color: var(--muted);
+  font: 400 0.95rem var(--font-mono);
+}
+
+.state {
+  margin-top: 2rem;
+  font: 400 0.95rem var(--font-mono);
+  color: rgb(246 243 234 / 0.75);
+
+  &--error {
+    max-width: 28rem;
+    padding: 0.9rem 1rem;
+    border-left: 4px solid var(--chili);
+    background: #fbe9e4;
+    color: #7a1f10;
+
+    p {
+      margin: 0 0 0.75rem;
+    }
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(0.75rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .carta {
+    animation: none;
+  }
+}

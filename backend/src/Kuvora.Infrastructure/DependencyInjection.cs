@@ -1,5 +1,6 @@
 using Kuvora.Application.Auth;
 using Kuvora.Application.Common;
+using Kuvora.Application.Orders;
 using Kuvora.Domain.Users;
 using Kuvora.Infrastructure.Persistence;
 using Kuvora.Infrastructure.Security;
@@ -21,6 +22,7 @@ public static class DependencyInjection
                 .UseSnakeCaseNamingConvention());
 
         services.AddScoped<IAppDbContext>(sp => sp.GetRequiredService<AppDbContext>());
+        services.AddScoped<IOrderNumberGenerator, OrderNumberGenerator>();
 
         services.Configure<PasswordHasherOptions>(options => options.IterationCount = 210_000);
         services.AddSingleton<IPasswordHasher<User>, PasswordHasher<User>>();

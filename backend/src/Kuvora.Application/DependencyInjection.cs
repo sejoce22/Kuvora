@@ -1,5 +1,6 @@
 using Kuvora.Application.Auth;
 using Kuvora.Application.Catalog;
+using Kuvora.Application.Orders;
 using Kuvora.Application.Tables;
 using Kuvora.Application.Tenants;
 using Kuvora.Application.Users;
@@ -17,6 +18,7 @@ public static class DependencyInjection
         services.AddScoped<ICategoryService, CategoryService>();
         services.AddScoped<IProductService, ProductService>();
         services.AddScoped<IDiningTableService, DiningTableService>();
+        services.AddScoped<IOrderService, OrderService>();
 
         return services;
     }

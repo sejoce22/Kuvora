@@ -1,6 +1,7 @@
 using Kuvora.Application.Common;
 using Kuvora.Domain.Catalog;
 using Kuvora.Domain.Common;
+using Kuvora.Domain.Orders;
 using Kuvora.Domain.Tables;
 using Kuvora.Domain.Tenants;
 using Kuvora.Domain.Users;
@@ -20,6 +21,7 @@ public class AppDbContext(
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<Product> Products => Set<Product>();
     public DbSet<DiningTable> DiningTables => Set<DiningTable>();
+    public DbSet<Order> Orders => Set<Order>();
 
     // EF lee esta propiedad en CADA consulta, con el valor de la petición en curso.
     // Debe ser una propiedad del contexto: así EF la trata como parámetro y no la "congela" en el modelo.

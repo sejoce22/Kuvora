@@ -1,6 +1,7 @@
 using Kuvora.Application;
 using Kuvora.Application.Catalog;
 using Kuvora.Application.Common;
+using Kuvora.Application.Orders;
 using Kuvora.Application.Tables;
 using Kuvora.Domain.Tenants;
 using Kuvora.Infrastructure.Persistence;
@@ -23,8 +24,10 @@ internal sealed class ServiceHost : IDisposable
         var services = new ServiceCollection();
 
         services.AddApplication();
+        services.AddSingleton(TimeProvider.System);
         services.AddScoped(_ => new AppDbContext(fixture.Options, new FakeCurrentTenant(tenantId), TimeProvider.System));
         services.AddScoped<IAppDbContext>(sp => sp.GetRequiredService<AppDbContext>());
+        services.AddScoped<IOrderNumberGenerator, OrderNumberGenerator>();
         services.AddSingleton<ICurrentUser>(new FakeCurrentUser(Guid.CreateVersion7(), tenantId));
 
         _provider = services.BuildServiceProvider();
@@ -34,6 +37,7 @@ internal sealed class ServiceHost : IDisposable
     public ICategoryService Categories => _scope.ServiceProvider.GetRequiredService<ICategoryService>();
     public IProductService Products => _scope.ServiceProvider.GetRequiredService<IProductService>();
     public IDiningTableService Tables => _scope.ServiceProvider.GetRequiredService<IDiningTableService>();
+    public IOrderService Orders => _scope.ServiceProvider.GetRequiredService<IOrderService>();
 
     public static ServiceHost For(PostgresFixture fixture, Guid tenantId) => new(fixture, tenantId);
 

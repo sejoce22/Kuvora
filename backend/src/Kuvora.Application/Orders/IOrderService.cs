@@ -10,4 +10,8 @@ public interface IOrderService
     Task<OrderDto> AddItemAsync(Guid orderId, AddOrderItemRequest request, CancellationToken cancellationToken);
     Task<OrderDto> UpdateItemAsync(Guid orderId, Guid itemId, UpdateOrderItemRequest request, CancellationToken cancellationToken);
     Task<OrderDto> RemoveItemAsync(Guid orderId, Guid itemId, CancellationToken cancellationToken);
+
+    Task<OrderDto> SendToKitchenAsync(Guid orderId, CancellationToken cancellationToken);
+    Task<OrderDto> CancelItemAsync(Guid orderId, Guid itemId, CancelRequest request, CancellationToken cancellationToken);
+    Task<OrderDto> CancelOrderAsync(Guid orderId, CancelRequest request, CancellationToken cancellationToken);
 }

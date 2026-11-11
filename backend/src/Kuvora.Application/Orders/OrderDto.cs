@@ -13,7 +13,9 @@ public sealed record OrderItemDto(
     int? DinerNumber,
     OrderItemStatus Status,
     int? Round,
-    DateTimeOffset? SentAtUtc);
+    DateTimeOffset? SentAtUtc,
+    DateTimeOffset? CancelledAtUtc,
+    string? CancelReason);
 
 // Detalle completo de un pedido (pantalla de Pedido).
 public sealed record OrderDto(
@@ -29,6 +31,8 @@ public sealed record OrderDto(
     DateTimeOffset OpenedAtUtc,
     long Total,
     int CurrentRound,
+    DateTimeOffset? CancelledAtUtc,
+    string? CancelReason,
     IReadOnlyList<OrderItemDto> Items);
 
 // Resumen para la sala: alimenta el estado de las mesas (monto y hora desde que se abrió).

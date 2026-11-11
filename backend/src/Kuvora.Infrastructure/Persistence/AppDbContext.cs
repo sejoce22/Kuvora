@@ -65,6 +65,8 @@ public class AppDbContext(
         var now = timeProvider.GetUtcNow();
         var tenantId = CurrentTenantId;
 
+        TouchOrdersWithChangedItems();
+
         foreach (var entry in ChangeTracker.Entries())
         {
             // Auditoría: UpdatedAtUtc se completa solo al modificar
@@ -84,6 +86,26 @@ public class AppDbContext(
                 throw new InvalidOperationException(
                     "Se intentó guardar una entidad de otro restaurante.");
             }
+        }
+    }
+
+    // Un pedido y sus ítems son un solo agregado. Si cambia un ítem (se agrega, edita, quita o cancela),
+    // la fila del pedido también se marca como modificada: así su columna xmin cambia y dos personas que
+    // editan el mismo pedido a la vez no pueden tener éxito las dos (la segunda recibe un conflicto).
+    // Sin esto, agregar un ítem solo inserta una fila en order_items y el pedido no "se entera".
+    private void TouchOrdersWithChangedItems()
+    {
+        var changedItems = ChangeTracker.Entries<OrderItem>()
+            .Where(e => e.State is EntityState.Added or EntityState.Modified or EntityState.Deleted)
+            .Select(e => e.Entity.OrderId)
+            .Distinct()
+            .ToList();
+
+        // ToList: cambiar el estado de una entrada mientras se recorre la colección del ChangeTracker no es seguro.
+        foreach (var orderEntry in ChangeTracker.Entries<Order>().ToList())
+        {
+            if (orderEntry.State == EntityState.Unchanged && changedItems.Contains(orderEntry.Entity.Id))
+                orderEntry.Property(nameof(Entity.UpdatedAtUtc)).IsModified = true;
         }
     }
 }

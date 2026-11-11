@@ -4,6 +4,7 @@ using Kuvora.Application.Common;
 using Kuvora.Application.Orders;
 using Kuvora.Application.Tables;
 using Kuvora.Domain.Tenants;
+using Kuvora.Domain.Users;
 using Kuvora.Infrastructure.Persistence;
 using Kuvora.Infrastructure.Tests.Persistence;
 using Microsoft.Extensions.DependencyInjection;
@@ -61,8 +62,9 @@ internal sealed class ServiceHost : IDisposable
     }
 }
 
-internal sealed class FakeCurrentUser(Guid userId, Guid tenantId) : ICurrentUser
+internal sealed class FakeCurrentUser(Guid userId, Guid tenantId, UserRole role = UserRole.Admin) : ICurrentUser
 {
     public Guid UserId => userId;
     public Guid TenantId => tenantId;
+    public UserRole Role => role;
 }

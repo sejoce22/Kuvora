@@ -1,5 +1,6 @@
 using Kuvora.Application.Common;
 using Kuvora.Domain.Orders;
+using Kuvora.Domain.Users;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kuvora.Application.Orders;
@@ -156,6 +157,69 @@ internal sealed class OrderService(
         return await ToDtoAsync(order, cancellationToken);
     }
 
+    public async Task<OrderDto> SendToKitchenAsync(Guid orderId, CancellationToken cancellationToken)
+    {
+        var order = await LoadOpenOrderForEditAsync(orderId, cancellationToken);
+
+        // Sin ítems pendientes no hay nada que enviar. Responder 409 (en vez de repetir la ronda) es lo que
+        // vuelve seguro un doble clic o un reintento de red: la segunda llamada no duplica la comanda.
+        if (!order.HasPendingItems)
+            throw new ConflictException("No hay ítems pendientes para enviar a cocina.");
+
+        order.SendToKitchen(timeProvider.GetUtcNow());
+
+        await db.SaveChangesAsync(cancellationToken);
+
+        return await ToDtoAsync(order, cancellationToken);
+    }
+
+    public async Task<OrderDto> CancelItemAsync(
+        Guid orderId,
+        Guid itemId,
+        CancelRequest request,
+        CancellationToken cancellationToken)
+    {
+        // Un ítem enviado ya llegó a la cocina: cancelarlo es una decisión del Admin, con motivo y registro.
+        EnsureAdmin("Solo un administrador puede cancelar un ítem enviado a cocina.");
+
+        var order = await LoadOpenOrderForEditAsync(orderId, cancellationToken);
+        var item = FindItem(order, itemId);
+
+        if (item.Status != OrderItemStatus.Sent)
+            throw new ConflictException("Solo se puede cancelar un ítem enviado a cocina; uno pendiente se quita.");
+
+        order.CancelItem(item.Id, currentUser.UserId, request.Reason, timeProvider.GetUtcNow());
+
+        await db.SaveChangesAsync(cancellationToken);
+
+        return await ToDtoAsync(order, cancellationToken);
+    }
+
+    public async Task<OrderDto> CancelOrderAsync(
+        Guid orderId,
+        CancelRequest request,
+        CancellationToken cancellationToken)
+    {
+        var order = await LoadOpenOrderForEditAsync(orderId, cancellationToken);
+
+        // El mesero puede cancelar un pedido que todavía no salió a cocina (se abrió por error);
+        // si hay ítems enviados, ya se están preparando y solo el Admin decide.
+        if (order.HasSentItems)
+            EnsureAdmin("Solo un administrador puede cancelar un pedido con ítems enviados a cocina.");
+
+        order.Cancel(currentUser.UserId, request.Reason, timeProvider.GetUtcNow());
+
+        await db.SaveChangesAsync(cancellationToken);
+
+        return await ToDtoAsync(order, cancellationToken);
+    }
+
+    private void EnsureAdmin(string message)
+    {
+        if (currentUser.Role != UserRole.Admin)
+            throw new ForbiddenException(message);
+    }
+
     // Carga el pedido CON seguimiento (se va a modificar) y exige que siga abierto. Un pedido de otro
     // restaurante no pasa el filtro global y responde 404.
     private async Task<Order> LoadOpenOrderForEditAsync(Guid orderId, CancellationToken cancellationToken)
@@ -173,10 +237,13 @@ internal sealed class OrderService(
 
     // Las reglas de estado se revisan aquí para devolver 404 o 409 con un mensaje claro.
     // El dominio las vuelve a exigir (red de seguridad), pero nunca debería llegar a lanzarlas.
+    private static OrderItem FindItem(Order order, Guid itemId) =>
+        order.Items.FirstOrDefault(i => i.Id == itemId)
+        ?? throw new NotFoundException("El ítem no existe en este pedido.");
+
     private static OrderItem FindPendingItem(Order order, Guid itemId, string action)
     {
-        var item = order.Items.FirstOrDefault(i => i.Id == itemId)
-            ?? throw new NotFoundException("El ítem no existe en este pedido.");
+        var item = FindItem(order, itemId);
 
         if (item.Status != OrderItemStatus.Pending)
             throw new ConflictException(
@@ -238,6 +305,8 @@ internal sealed class OrderService(
             order.OpenedAtUtc,
             order.Total,
             order.CurrentRound,
+            order.CancelledAtUtc,
+            order.CancelReason,
             order.Items
                 .OrderBy(i => i.CreatedAtUtc)
                 .ThenBy(i => i.Id)
@@ -252,6 +321,8 @@ internal sealed class OrderService(
                     i.DinerNumber,
                     i.Status,
                     i.Round,
-                    i.SentAtUtc))
+                    i.SentAtUtc,
+                    i.CancelledAtUtc,
+                    i.CancelReason))
                 .ToList());
 }

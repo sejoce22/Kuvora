@@ -1,4 +1,5 @@
 using Kuvora.Application.Common;
+using Kuvora.Domain.Orders;
 using Kuvora.Domain.Tables;
 using Microsoft.EntityFrameworkCore;
 
@@ -57,6 +58,17 @@ internal sealed class DiningTableService(IAppDbContext db, ICurrentUser currentU
     public async Task<DiningTableDto> SetActiveAsync(Guid id, bool isActive, CancellationToken cancellationToken)
     {
         var table = await GetByIdAsync(id, cancellationToken);
+
+        // Una mesa con clientes sentados no puede desaparecer de la sala.
+        if (!isActive)
+        {
+            var hasOpenOrder = await db.Orders.AnyAsync(
+                o => o.TableId == id && o.Status == OrderStatus.Open,
+                cancellationToken);
+
+            if (hasOpenOrder)
+                throw new ConflictException("No se puede desactivar una mesa con un pedido abierto.");
+        }
 
         if (isActive)
             table.Activate();

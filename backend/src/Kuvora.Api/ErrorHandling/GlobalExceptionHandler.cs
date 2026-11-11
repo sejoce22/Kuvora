@@ -20,6 +20,7 @@ public sealed class GlobalExceptionHandler(
             ConflictException => (StatusCodes.Status409Conflict, "Conflicto con el estado actual del recurso."),
             NotFoundException => (StatusCodes.Status404NotFound, "Recurso no encontrado."),
             BadRequestException => (StatusCodes.Status400BadRequest, "Solicitud inválida."),
+            ForbiddenException => (StatusCodes.Status403Forbidden, "Acción no permitida."),
             InvalidCredentialsException => (StatusCodes.Status401Unauthorized, "Credenciales inválidas."),
             // Dos personas cambiaron el mismo pedido a la vez: la columna xmin ya no coincidía (ver OrderConfiguration).
             // Va antes que la regla siguiente porque DbUpdateConcurrencyException hereda de DbUpdateException.
@@ -62,7 +63,8 @@ public sealed class GlobalExceptionHandler(
                 // Solo el mensaje de NUESTRAS excepciones de negocio, nunca el de una cualquiera
                 Detail = exception switch
                 {
-                    ConflictException or NotFoundException or BadRequestException => exception.Message,
+                    ConflictException or NotFoundException or BadRequestException or ForbiddenException =>
+                        exception.Message,
                     DbUpdateConcurrencyException => "Otra persona modificó este pedido. Recárgalo e inténtalo de nuevo.",
                     // Texto fijo: el mensaje de Postgres trae nombres de tablas e índices
                     DbUpdateException when IsUniqueViolation(exception) => "Ya existe un registro con esos datos.",

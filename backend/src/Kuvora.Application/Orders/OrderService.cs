@@ -15,7 +15,6 @@ internal sealed class OrderService(
         // La validación del cuerpo (canal y mesa coherentes) ya la hizo [ApiController]:
         // aquí solo se revisa lo que depende de la base de datos.
         var channel = request.Channel!.Value;
-        string? tableName = null;
 
         if (channel == OrderChannel.DineIn)
         {
@@ -36,8 +35,6 @@ internal sealed class OrderService(
 
             if (occupied)
                 throw new ConflictException("La mesa ya tiene un pedido abierto.");
-
-            tableName = table.Name;
         }
 
         // El número y el pedido se guardan en la MISMA transacción: si crear el pedido falla
@@ -59,8 +56,7 @@ internal sealed class OrderService(
         await db.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
 
-        var waiterNames = await UserNamesAsync([order.WaiterId], cancellationToken);
-        return ToDto(order, tableName, waiterNames);
+        return await ToDtoAsync(order, cancellationToken);
     }
 
     public async Task<OrderDto> GetAsync(Guid id, CancellationToken cancellationToken)
@@ -71,10 +67,7 @@ internal sealed class OrderService(
             .FirstOrDefaultAsync(o => o.Id == id, cancellationToken)
             ?? throw new NotFoundException("El pedido no existe.");
 
-        var tableNames = await TableNamesAsync([order.TableId], cancellationToken);
-        var waiterNames = await UserNamesAsync([order.WaiterId], cancellationToken);
-
-        return ToDto(order, order.TableId is { } tableId ? tableNames.GetValueOrDefault(tableId) : null, waiterNames);
+        return await ToDtoAsync(order, cancellationToken);
     }
 
     public async Task<IReadOnlyList<OrderSummaryDto>> GetOpenAsync(CancellationToken cancellationToken)
@@ -102,6 +95,111 @@ internal sealed class OrderService(
                 o.Total,
                 o.OpenedAtUtc))
             .ToList();
+    }
+
+    public async Task<OrderDto> AddItemAsync(
+        Guid orderId,
+        AddOrderItemRequest request,
+        CancellationToken cancellationToken)
+    {
+        var order = await LoadOpenOrderForEditAsync(orderId, cancellationToken);
+        EnsureDinerWithinGuestCount(order, request.DinerNumber);
+
+        var productId = request.ProductId!.Value;
+
+        var product = await db.Products.AsNoTracking()
+            .FirstOrDefaultAsync(p => p.Id == productId, cancellationToken)
+            ?? throw new NotFoundException("El producto no existe.");
+
+        var categoryIsActive = await db.Categories.AnyAsync(
+            c => c.Id == product.CategoryId && c.IsActive,
+            cancellationToken);
+
+        if (!product.IsActive || !categoryIsActive)
+            throw new ConflictException("El producto no está disponible.");
+
+        // El ítem guarda una copia del nombre y del precio de HOY: si el producto cambia mañana,
+        // este pedido no se altera.
+        order.AddItem(product.Id, product.Name, product.Price, request.Quantity, request.Note, request.DinerNumber);
+
+        await db.SaveChangesAsync(cancellationToken);
+
+        return await ToDtoAsync(order, cancellationToken);
+    }
+
+    public async Task<OrderDto> UpdateItemAsync(
+        Guid orderId,
+        Guid itemId,
+        UpdateOrderItemRequest request,
+        CancellationToken cancellationToken)
+    {
+        var order = await LoadOpenOrderForEditAsync(orderId, cancellationToken);
+        var item = FindPendingItem(order, itemId, "editar");
+        EnsureDinerWithinGuestCount(order, request.DinerNumber);
+
+        order.UpdateItem(item.Id, request.Quantity, request.Note, request.DinerNumber);
+
+        await db.SaveChangesAsync(cancellationToken);
+
+        return await ToDtoAsync(order, cancellationToken);
+    }
+
+    public async Task<OrderDto> RemoveItemAsync(Guid orderId, Guid itemId, CancellationToken cancellationToken)
+    {
+        var order = await LoadOpenOrderForEditAsync(orderId, cancellationToken);
+        var item = FindPendingItem(order, itemId, "quitar");
+
+        order.RemoveItem(item.Id);
+
+        await db.SaveChangesAsync(cancellationToken);
+
+        return await ToDtoAsync(order, cancellationToken);
+    }
+
+    // Carga el pedido CON seguimiento (se va a modificar) y exige que siga abierto. Un pedido de otro
+    // restaurante no pasa el filtro global y responde 404.
+    private async Task<Order> LoadOpenOrderForEditAsync(Guid orderId, CancellationToken cancellationToken)
+    {
+        var order = await db.Orders
+            .Include(o => o.Items)
+            .FirstOrDefaultAsync(o => o.Id == orderId, cancellationToken)
+            ?? throw new NotFoundException("El pedido no existe.");
+
+        if (order.Status != OrderStatus.Open)
+            throw new ConflictException("El pedido no está abierto.");
+
+        return order;
+    }
+
+    // Las reglas de estado se revisan aquí para devolver 404 o 409 con un mensaje claro.
+    // El dominio las vuelve a exigir (red de seguridad), pero nunca debería llegar a lanzarlas.
+    private static OrderItem FindPendingItem(Order order, Guid itemId, string action)
+    {
+        var item = order.Items.FirstOrDefault(i => i.Id == itemId)
+            ?? throw new NotFoundException("El ítem no existe en este pedido.");
+
+        if (item.Status != OrderItemStatus.Pending)
+            throw new ConflictException(
+                $"Solo se puede {action} un ítem pendiente; para uno enviado a cocina hay que cancelarlo.");
+
+        return item;
+    }
+
+    private static void EnsureDinerWithinGuestCount(Order order, int? dinerNumber)
+    {
+        if (dinerNumber is { } diner && order.GuestCount is { } guests && diner > guests)
+            throw new BadRequestException($"El comensal {diner} no existe: el pedido tiene {guests} personas.");
+    }
+
+    private async Task<OrderDto> ToDtoAsync(Order order, CancellationToken cancellationToken)
+    {
+        var tableNames = await TableNamesAsync([order.TableId], cancellationToken);
+        var waiterNames = await UserNamesAsync([order.WaiterId], cancellationToken);
+
+        return ToDto(
+            order,
+            order.TableId is { } tableId ? tableNames.GetValueOrDefault(tableId) : null,
+            waiterNames);
     }
 
     private async Task<Dictionary<Guid, string>> TableNamesAsync(

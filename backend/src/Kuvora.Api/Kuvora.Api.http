@@ -592,3 +592,494 @@ Content-Type: application/json
 ### 7.31 Luis (Waiter) lista las mesas: 200. Y Luis intentando crear una: 403 (cambia el método para probarlo)
 GET {{Kuvora.Api_HostAddress}}/api/tables
 Authorization: Bearer {{login7Waiter.response.body.$.accessToken}}
+
+###
+
+### ---- 8. PEDIDOS (ejecuta de la 8.1 a la 8.53 en orden) ----
+### Rutas: /api/orders. Permisos: Admin, Mesero y Cajero. Cancelar un ítem enviado: solo Admin.
+### Esta sección crea sus propios datos con nombres al azar ({{$randomInt}}), así se puede repetir.
+### Si tu cliente no reemplaza {{$randomInt}}, los nombres quedarán con el texto literal y una segunda ejecución dará 409 en 8.4 a 8.8.
+### Depende de los usuarios de la sección 7 (Ana Admin, Luis Waiter, Bea Admin de otro restaurante).
+
+### 8.1 Login de Ana (Admin de Madero): 200
+# @name login8Admin
+POST {{Kuvora.Api_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{ "email": "ana@madero.test", "password": "Prueba-12345" }
+
+###
+
+### 8.2 Login de Luis (Waiter de Madero): 200
+# @name login8Waiter
+POST {{Kuvora.Api_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{ "email": "luis@madero.test", "password": "Mozo-12345" }
+
+###
+
+### 8.3 Login de Bea (Admin de Otro): 200
+# @name login8B
+POST {{Kuvora.Api_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{ "email": "bea@otro.test", "password": "Prueba-12345" }
+
+###
+
+### ---- 8A. DATOS DE PRUEBA (los crea Ana) ----
+
+### 8.4 Categoría: 201
+# @name createCategory8
+POST {{Kuvora.Api_HostAddress}}/api/categories
+Authorization: Bearer {{login8Admin.response.body.$.accessToken}}
+Content-Type: application/json
+
+{ "name": "Platos {{$randomInt 1000 9999}}", "sortOrder": 1 }
+
+###
+
+### 8.5 Producto "Pastel de choclo" a 8900: 201
+# @name createProduct8a
+POST {{Kuvora.Api_HostAddress}}/api/products
+Authorization: Bearer {{login8Admin.response.body.$.accessToken}}
+Content-Type: application/json
+
+{
+  "categoryId": "{{createCategory8.response.body.$.id}}",
+  "name": "Pastel de choclo {{$randomInt 1000 9999}}",
+  "price": 8900
+}
+
+###
+
+### 8.6 Producto "Pisco sour" a 4500: 201
+# @name createProduct8b
+POST {{Kuvora.Api_HostAddress}}/api/products
+Authorization: Bearer {{login8Admin.response.body.$.accessToken}}
+Content-Type: application/json
+
+{
+  "categoryId": "{{createCategory8.response.body.$.id}}",
+  "name": "Pisco sour {{$randomInt 1000 9999}}",
+  "price": 4500
+}
+
+###
+
+### 8.7 Mesa A: 201
+# @name createTable8a
+POST {{Kuvora.Api_HostAddress}}/api/tables
+Authorization: Bearer {{login8Admin.response.body.$.accessToken}}
+Content-Type: application/json
+
+{ "name": "Mesa A{{$randomInt 1000 9999}}", "capacity": 4, "zone": "Pedidos" }
+
+###
+
+### 8.8 Mesa B: 201
+# @name createTable8b
+POST {{Kuvora.Api_HostAddress}}/api/tables
+Authorization: Bearer {{login8Admin.response.body.$.accessToken}}
+Content-Type: application/json
+
+{ "name": "Mesa B{{$randomInt 1000 9999}}", "capacity": 2, "zone": "Pedidos" }
+
+###
+
+### ---- 8B. ABRIR PEDIDOS ----
+
+### 8.9 Sin token: 401
+POST {{Kuvora.Api_HostAddress}}/api/orders
+Content-Type: application/json
+
+{ "channel": "DineIn", "tableId": "{{createTable8a.response.body.$.id}}", "guestCount": 4 }
+
+###
+
+### 8.10 Luis abre un pedido de salón en la Mesa A con 4 personas: 201 (status Open, número consecutivo, waiterName "Luis ...")
+# @name createOrder8
+POST {{Kuvora.Api_HostAddress}}/api/orders
+Authorization: Bearer {{login8Waiter.response.body.$.accessToken}}
+Content-Type: application/json
+
+{ "channel": "DineIn", "tableId": "{{createTable8a.response.body.$.id}}", "guestCount": 4 }
+
+###
+
+### 8.11 Abrir otro pedido en la Mesa A (ya tiene uno abierto): 409
+POST {{Kuvora.Api_HostAddress}}/api/orders
+Authorization: Bearer {{login8Waiter.response.body.$.accessToken}}
+Content-Type: application/json
+
+{ "channel": "DineIn", "tableId": "{{createTable8a.response.body.$.id}}", "guestCount": 2 }
+
+###
+
+### 8.12 Pedido de salón sin mesa: 400
+POST {{Kuvora.Api_HostAddress}}/api/orders
+Authorization: Bearer {{login8Waiter.response.body.$.accessToken}}
+Content-Type: application/json
+
+{ "channel": "DineIn" }
+
+###
+
+### 8.13 Pedido de mostrador con mesa: 400
+POST {{Kuvora.Api_HostAddress}}/api/orders
+Authorization: Bearer {{login8Waiter.response.body.$.accessToken}}
+Content-Type: application/json
+
+{ "channel": "Counter", "tableId": "{{createTable8b.response.body.$.id}}" }
+
+###
+
+### 8.14 Pedido de mostrador sin mesa: 201 (el número es el siguiente al de 8.10)
+# @name createCounter8
+POST {{Kuvora.Api_HostAddress}}/api/orders
+Authorization: Bearer {{login8Waiter.response.body.$.accessToken}}
+Content-Type: application/json
+
+{ "channel": "Counter" }
+
+###
+
+### 8.15 Canal inválido (99): 400
+POST {{Kuvora.Api_HostAddress}}/api/orders
+Authorization: Bearer {{login8Waiter.response.body.$.accessToken}}
+Content-Type: application/json
+
+{ "channel": 99 }
+
+###
+
+### 8.16 Personas fuera de rango (0): 400 (cambia a 51 para probar el otro extremo)
+POST {{Kuvora.Api_HostAddress}}/api/orders
+Authorization: Bearer {{login8Waiter.response.body.$.accessToken}}
+Content-Type: application/json
+
+{ "channel": "DineIn", "tableId": "{{createTable8b.response.body.$.id}}", "guestCount": 0 }
+
+###
+
+### 8.17 Mesa que no existe: 404
+POST {{Kuvora.Api_HostAddress}}/api/orders
+Authorization: Bearer {{login8Waiter.response.body.$.accessToken}}
+Content-Type: application/json
+
+{ "channel": "DineIn", "tableId": "00000000-0000-0000-0000-000000000001" }
+
+###
+
+### 8.18 Bea abre un pedido en la mesa de Ana: 404 (no revela que existe)
+POST {{Kuvora.Api_HostAddress}}/api/orders
+Authorization: Bearer {{login8B.response.body.$.accessToken}}
+Content-Type: application/json
+
+{ "channel": "DineIn", "tableId": "{{createTable8b.response.body.$.id}}" }
+
+###
+
+### 8.19 Luis lista los pedidos abiertos: 200 (el de la Mesa A y el de mostrador, con monto 0)
+GET {{Kuvora.Api_HostAddress}}/api/orders/open
+Authorization: Bearer {{login8Waiter.response.body.$.accessToken}}
+
+###
+
+### 8.20 Bea lista los suyos: 200 y NO aparece ninguno de Ana
+GET {{Kuvora.Api_HostAddress}}/api/orders/open
+Authorization: Bearer {{login8B.response.body.$.accessToken}}
+
+###
+
+### 8.21 Luis ve el detalle del pedido de la Mesa A: 200 (tableName, guestCount 4, items vacío)
+GET {{Kuvora.Api_HostAddress}}/api/orders/{{createOrder8.response.body.$.id}}
+Authorization: Bearer {{login8Waiter.response.body.$.accessToken}}
+
+###
+
+### 8.22 Bea pide el detalle del pedido de Ana: 404
+GET {{Kuvora.Api_HostAddress}}/api/orders/{{createOrder8.response.body.$.id}}
+Authorization: Bearer {{login8B.response.body.$.accessToken}}
+
+###
+
+### 8.23 Ana intenta desactivar la Mesa A con un pedido abierto: 409
+POST {{Kuvora.Api_HostAddress}}/api/tables/{{createTable8a.response.body.$.id}}/deactivate
+Authorization: Bearer {{login8Admin.response.body.$.accessToken}}
+
+###
+
+### ---- 8C. ÍTEMS (pedido de la Mesa A) ----
+
+### 8.24 Luis agrega 2 pasteles para el comensal 1, con nota: 200 (total 17800; el ítem queda Pending, sin ronda)
+# @name addItem1
+POST {{Kuvora.Api_HostAddress}}/api/orders/{{createOrder8.response.body.$.id}}/items
+Authorization: Bearer {{login8Waiter.response.body.$.accessToken}}
+Content-Type: application/json
+
+{
+  "productId": "{{createProduct8a.response.body.$.id}}",
+  "quantity": 2,
+  "note": "  sin cilantro  ",
+  "dinerNumber": 1
+}
+
+###
+
+### 8.25 Luis agrega un pisco sour para el comensal 2: 200 (total 22300; la nota queda sin espacios)
+# @name addItem2
+POST {{Kuvora.Api_HostAddress}}/api/orders/{{createOrder8.response.body.$.id}}/items
+Authorization: Bearer {{login8Waiter.response.body.$.accessToken}}
+Content-Type: application/json
+
+{
+  "productId": "{{createProduct8b.response.body.$.id}}",
+  "quantity": 1,
+  "dinerNumber": 2
+}
+
+###
+
+### 8.26 Comensal 5 en un pedido de 4 personas: 400
+POST {{Kuvora.Api_HostAddress}}/api/orders/{{createOrder8.response.body.$.id}}/items
+Authorization: Bearer {{login8Waiter.response.body.$.accessToken}}
+Content-Type: application/json
+
+{
+  "productId": "{{createProduct8b.response.body.$.id}}",
+  "quantity": 1,
+  "dinerNumber": 5
+}
+
+###
+
+### 8.27 Cantidad 0: 400 (cambia a 100 para probar el otro extremo)
+POST {{Kuvora.Api_HostAddress}}/api/orders/{{createOrder8.response.body.$.id}}/items
+Authorization: Bearer {{login8Waiter.response.body.$.accessToken}}
+Content-Type: application/json
+
+{ "productId": "{{createProduct8b.response.body.$.id}}", "quantity": 0 }
+
+###
+
+### 8.28 Producto que no existe: 404
+POST {{Kuvora.Api_HostAddress}}/api/orders/{{createOrder8.response.body.$.id}}/items
+Authorization: Bearer {{login8Waiter.response.body.$.accessToken}}
+Content-Type: application/json
+
+{ "productId": "00000000-0000-0000-0000-000000000001", "quantity": 1 }
+
+###
+
+### 8.29 Sin productId: 400
+POST {{Kuvora.Api_HostAddress}}/api/orders/{{createOrder8.response.body.$.id}}/items
+Authorization: Bearer {{login8Waiter.response.body.$.accessToken}}
+Content-Type: application/json
+
+{ "quantity": 1 }
+
+###
+
+### 8.30 Bea agrega un ítem al pedido de Ana: 404
+POST {{Kuvora.Api_HostAddress}}/api/orders/{{createOrder8.response.body.$.id}}/items
+Authorization: Bearer {{login8B.response.body.$.accessToken}}
+Content-Type: application/json
+
+{ "productId": "{{createProduct8b.response.body.$.id}}", "quantity": 1 }
+
+###
+
+### 8.31 Comensal 0: 400 (los comensales van de 1 a 50)
+POST {{Kuvora.Api_HostAddress}}/api/orders/{{createOrder8.response.body.$.id}}/items
+Authorization: Bearer {{login8Waiter.response.body.$.accessToken}}
+Content-Type: application/json
+
+{ "productId": "{{createProduct8b.response.body.$.id}}", "quantity": 1, "dinerNumber": 0 }
+
+###
+
+### 8.32 Luis edita el primer ítem: 200 (cantidad 3, nota "bien cocido", comensal 1; total 31200 = 3 x 8900 + 4500)
+PUT {{Kuvora.Api_HostAddress}}/api/orders/{{createOrder8.response.body.$.id}}/items/{{addItem1.response.body.$.items[0].id}}
+Authorization: Bearer {{login8Waiter.response.body.$.accessToken}}
+Content-Type: application/json
+
+{ "quantity": 3, "note": "bien cocido", "dinerNumber": 1 }
+
+###
+
+### 8.33 Edición sin cantidad: 400
+PUT {{Kuvora.Api_HostAddress}}/api/orders/{{createOrder8.response.body.$.id}}/items/{{addItem1.response.body.$.items[0].id}}
+Authorization: Bearer {{login8Waiter.response.body.$.accessToken}}
+Content-Type: application/json
+
+{ "note": "sin cantidad" }
+
+###
+
+### 8.34 Editar un ítem que no es de este pedido (usa un id inventado): 404
+PUT {{Kuvora.Api_HostAddress}}/api/orders/{{createOrder8.response.body.$.id}}/items/00000000-0000-0000-0000-000000000001
+Authorization: Bearer {{login8Waiter.response.body.$.accessToken}}
+Content-Type: application/json
+
+{ "quantity": 1 }
+
+###
+
+### 8.35 Luis quita el pisco sour (el segundo ítem de la 8.25): 200 (el total baja a 26700)
+DELETE {{Kuvora.Api_HostAddress}}/api/orders/{{createOrder8.response.body.$.id}}/items/{{addItem2.response.body.$.items[1].id}}
+Authorization: Bearer {{login8Waiter.response.body.$.accessToken}}
+
+###
+
+### 8.36 "Deshacer": Luis lo vuelve a agregar: 200 (el ítem queda con otro id)
+# @name addItem3
+POST {{Kuvora.Api_HostAddress}}/api/orders/{{createOrder8.response.body.$.id}}/items
+Authorization: Bearer {{login8Waiter.response.body.$.accessToken}}
+Content-Type: application/json
+
+{ "productId": "{{createProduct8b.response.body.$.id}}", "quantity": 1, "dinerNumber": 2 }
+
+###
+
+### ---- 8D. ENVIAR A COCINA ----
+
+### 8.37 Luis envía a cocina: 200 (currentRound 1; los dos ítems pasan a Sent con round 1 y sentAtUtc)
+# @name send1
+POST {{Kuvora.Api_HostAddress}}/api/orders/{{createOrder8.response.body.$.id}}/send
+Authorization: Bearer {{login8Waiter.response.body.$.accessToken}}
+
+###
+
+### 8.38 Enviar otra vez sin ítems nuevos (doble clic): 409, no se duplica la comanda
+POST {{Kuvora.Api_HostAddress}}/api/orders/{{createOrder8.response.body.$.id}}/send
+Authorization: Bearer {{login8Waiter.response.body.$.accessToken}}
+
+###
+
+### 8.39 Luis edita un ítem ya enviado: 409
+PUT {{Kuvora.Api_HostAddress}}/api/orders/{{createOrder8.response.body.$.id}}/items/{{send1.response.body.$.items[0].id}}
+Authorization: Bearer {{login8Waiter.response.body.$.accessToken}}
+Content-Type: application/json
+
+{ "quantity": 1 }
+
+###
+
+### 8.40 Luis quita un ítem ya enviado: 409
+DELETE {{Kuvora.Api_HostAddress}}/api/orders/{{createOrder8.response.body.$.id}}/items/{{send1.response.body.$.items[0].id}}
+Authorization: Bearer {{login8Waiter.response.body.$.accessToken}}
+
+###
+
+### 8.41 Luis agrega algo nuevo (queda Pending) y lo envía: la 8.42 da ronda 2
+# @name addItem4
+POST {{Kuvora.Api_HostAddress}}/api/orders/{{createOrder8.response.body.$.id}}/items
+Authorization: Bearer {{login8Waiter.response.body.$.accessToken}}
+Content-Type: application/json
+
+{ "productId": "{{createProduct8b.response.body.$.id}}", "quantity": 2, "note": "con hielo", "dinerNumber": 3 }
+
+###
+
+### 8.42 Segundo envío: 200 (currentRound 2; los ítems de la ronda 1 conservan round 1)
+# @name send2
+POST {{Kuvora.Api_HostAddress}}/api/orders/{{createOrder8.response.body.$.id}}/send
+Authorization: Bearer {{login8Waiter.response.body.$.accessToken}}
+
+###
+
+### ---- 8E. CANCELAR (solo el Admin cancela lo enviado) ----
+
+### 8.43 Luis intenta cancelar un ítem enviado: 403
+POST {{Kuvora.Api_HostAddress}}/api/orders/{{createOrder8.response.body.$.id}}/items/{{send2.response.body.$.items[1].id}}/cancel
+Authorization: Bearer {{login8Waiter.response.body.$.accessToken}}
+Content-Type: application/json
+
+{ "reason": "El cliente cambió de idea" }
+
+###
+
+### 8.44 Ana cancela un ítem enviado sin motivo: 400
+POST {{Kuvora.Api_HostAddress}}/api/orders/{{createOrder8.response.body.$.id}}/items/{{send2.response.body.$.items[1].id}}/cancel
+Authorization: Bearer {{login8Admin.response.body.$.accessToken}}
+Content-Type: application/json
+
+{ "reason": "   " }
+
+###
+
+### 8.45 Ana cancela el pisco sour de la ronda 1 con motivo: 200 (status Cancelled, cancelReason, el total baja)
+# @name cancelItem8
+POST {{Kuvora.Api_HostAddress}}/api/orders/{{createOrder8.response.body.$.id}}/items/{{send2.response.body.$.items[1].id}}/cancel
+Authorization: Bearer {{login8Admin.response.body.$.accessToken}}
+Content-Type: application/json
+
+{ "reason": "El cliente cambió de idea" }
+
+###
+
+### 8.46 Ana cancela el mismo ítem otra vez: 409
+POST {{Kuvora.Api_HostAddress}}/api/orders/{{createOrder8.response.body.$.id}}/items/{{send2.response.body.$.items[1].id}}/cancel
+Authorization: Bearer {{login8Admin.response.body.$.accessToken}}
+Content-Type: application/json
+
+{ "reason": "Otra vez" }
+
+###
+
+### 8.47 Luis intenta cancelar el pedido de la Mesa A (tiene ítems enviados): 403
+POST {{Kuvora.Api_HostAddress}}/api/orders/{{createOrder8.response.body.$.id}}/cancel
+Authorization: Bearer {{login8Waiter.response.body.$.accessToken}}
+Content-Type: application/json
+
+{ "reason": "Se fueron" }
+
+###
+
+### 8.48 Luis agrega un ítem al pedido de mostrador y lo cancela sin enviarlo: primero agrega (200)
+POST {{Kuvora.Api_HostAddress}}/api/orders/{{createCounter8.response.body.$.id}}/items
+Authorization: Bearer {{login8Waiter.response.body.$.accessToken}}
+Content-Type: application/json
+
+{ "productId": "{{createProduct8b.response.body.$.id}}", "quantity": 1 }
+
+###
+
+### 8.49 Luis cancela el pedido de mostrador (nada enviado): 200 (status Cancelled y su ítem Cancelled)
+POST {{Kuvora.Api_HostAddress}}/api/orders/{{createCounter8.response.body.$.id}}/cancel
+Authorization: Bearer {{login8Waiter.response.body.$.accessToken}}
+Content-Type: application/json
+
+{ "reason": "Abierto por error" }
+
+###
+
+### 8.50 Luis intenta agregar un ítem al pedido cancelado: 409
+POST {{Kuvora.Api_HostAddress}}/api/orders/{{createCounter8.response.body.$.id}}/items
+Authorization: Bearer {{login8Waiter.response.body.$.accessToken}}
+Content-Type: application/json
+
+{ "productId": "{{createProduct8b.response.body.$.id}}", "quantity": 1 }
+
+###
+
+### 8.51 Ana cancela el pedido de la Mesa A (tiene ítems enviados; es Admin): 200
+POST {{Kuvora.Api_HostAddress}}/api/orders/{{createOrder8.response.body.$.id}}/cancel
+Authorization: Bearer {{login8Admin.response.body.$.accessToken}}
+Content-Type: application/json
+
+{ "reason": "Cliente se retiró" }
+
+###
+
+### 8.52 Ana desactiva la Mesa A (ya no hay pedido abierto): 200
+POST {{Kuvora.Api_HostAddress}}/api/tables/{{createTable8a.response.body.$.id}}/deactivate
+Authorization: Bearer {{login8Admin.response.body.$.accessToken}}
+
+###
+
+### 8.53 Luis lista los abiertos: 200 y la lista queda vacía
+GET {{Kuvora.Api_HostAddress}}/api/orders/open
+Authorization: Bearer {{login8Waiter.response.body.$.accessToken}}

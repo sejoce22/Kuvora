@@ -10,10 +10,82 @@
       <button type="button" class="btn btn--dark" (click)="load()">Reintentar</button>
     </div>
   } @else {
-    @if (canEdit()) {
+    @if (canEdit() || canOrder()) {
       <div class="actions">
-        <button type="button" class="btn btn--amber" (click)="newTable()">Nueva mesa</button>
+        @if (canOrder()) {
+          <button
+            type="button"
+            class="btn btn--amber"
+            [disabled]="counterBusy()"
+            [attr.aria-busy]="counterBusy()"
+            (click)="openCounterOrder()"
+          >
+            Pedido de mostrador
+          </button>
+        }
+        @if (canEdit()) {
+          <button type="button" class="btn btn--dark" (click)="newTable()">Nueva mesa</button>
+        }
       </div>
+    }
+
+    @if (ordersFailed()) {
+      <p class="state state--error" role="alert">
+        No pudimos actualizar el estado de las mesas.
+        <button type="button" class="link" (click)="loadOrders()">Reintentar</button>
+      </p>
+    }
+
+    @if (opening(); as table) {
+      <form class="opening sheet" [formGroup]="guestsForm" (ngSubmit)="openOrder()" novalidate>
+        <h2>Abrir pedido en {{ table.name }}</h2>
+
+        <div class="field">
+          <label for="guest-count">¿Cuántas personas?</label>
+          <input
+            id="guest-count"
+            type="number"
+            step="1"
+            inputmode="numeric"
+            [attr.min]="guestMin"
+            [attr.max]="guestMax"
+            formControlName="guests"
+            [attr.aria-invalid]="guestsForm.controls.guests.touched && guestsForm.controls.guests.invalid"
+          />
+          @if (guestsForm.controls.guests.touched && guestsForm.controls.guests.invalid) {
+            <p class="hint">Usa un número entero entre {{ guestMin }} y {{ guestMax }}.</p>
+          }
+        </div>
+
+        @if (openingError(); as message) {
+          <p class="alert" role="alert">{{ message }}</p>
+        }
+
+        <div class="editor__buttons">
+          <button type="submit" class="btn btn--dark" [disabled]="openingBusy()" [attr.aria-busy]="openingBusy()">
+            {{ openingBusy() ? 'Abriendo…' : 'Abrir pedido' }}
+          </button>
+          <button type="button" class="btn btn--ghost" (click)="cancelOpening()">Cancelar</button>
+        </div>
+      </form>
+    }
+
+    @if (counterOrders().length > 0) {
+      <section class="zone">
+        <h2 class="zone__title">Mostrador</h2>
+
+        <ul class="grid">
+          @for (order of counterOrders(); track order.id) {
+            <li class="table is-busy">
+              <button type="button" class="table__main" (click)="openCounterDetail(order)">
+                <p class="table__name">Pedido #{{ order.number }}</p>
+                <p class="table__status table__status--busy">Abierto</p>
+                <p class="table__meta">{{ formatClp(order.total) }} · {{ elapsed(order) }}</p>
+              </button>
+            </li>
+          }
+        </ul>
+      </section>
     }
 
     @if (actionError(); as message) {
@@ -95,14 +167,16 @@
 
         <ul class="grid">
           @for (table of group.tables; track table.id) {
-            <li class="table" [class.is-off]="!table.isActive">
-              <p class="table__name">{{ table.name }}</p>
-              <p class="table__capacity">
-                {{ table.capacity }} {{ table.capacity === 1 ? 'persona' : 'personas' }}
-              </p>
-
-              @if (!table.isActive) {
-                <p class="table__badge">Inactiva</p>
+            @let order = orderOf(table.id);
+            <li class="table" [class.is-off]="!table.isActive" [class.is-busy]="order">
+              @if (table.isActive && canOrder()) {
+                <button type="button" class="table__main" (click)="select(table)">
+                  <ng-container *ngTemplateOutlet="info; context: { $implicit: table, order: order }" />
+                </button>
+              } @else {
+                <div class="table__main">
+                  <ng-container *ngTemplateOutlet="info; context: { $implicit: table, order: order }" />
+                </div>
               }
 
               @if (canEdit()) {
@@ -120,3 +194,21 @@
     }
   }
 </section>
+
+<ng-template #info let-table let-order="order">
+  <p class="table__name">{{ table.name }}</p>
+  <p class="table__capacity">
+    {{ table.capacity }} {{ table.capacity === 1 ? 'persona' : 'personas' }}
+  </p>
+
+  @if (!table.isActive) {
+    <p class="table__badge">Inactiva</p>
+  } @else if (ordersLoaded()) {
+    @if (order) {
+      <p class="table__status table__status--busy">Ocupada</p>
+      <p class="table__meta">{{ formatClp(order.total) }} · {{ elapsed(order) }}</p>
+    } @else {
+      <p class="table__status table__status--free">Libre</p>
+    }
+  }
+</ng-template>

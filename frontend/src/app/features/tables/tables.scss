@@ -261,3 +261,68 @@ h2 {
     animation: none;
   }
 }
+
+// ---- Estado de la sala y apertura de pedidos ----
+
+// Contenido de la mesa como botón (mesa activa de quien puede pedir): ocupa toda la tarjeta.
+.table__main {
+  display: block;
+  width: 100%;
+  min-height: 5.5rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+
+button.table__main {
+  cursor: pointer;
+
+  &:hover .table__name {
+    color: var(--amber-deep);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--amber-deep);
+    outline-offset: 6px;
+  }
+}
+
+// Mesa ocupada: borde ámbar a la izquierda (además del texto "Ocupada")
+.table.is-busy {
+  border-left: 6px solid var(--amber);
+}
+
+.table__status {
+  display: inline-block;
+  margin: 0.55rem 0 0;
+  padding: 0.1rem 0.5rem;
+  font: 700 0.7rem var(--font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+
+  &--free {
+    border: 1.5px dashed var(--muted);
+    color: var(--muted);
+  }
+
+  &--busy {
+    background: var(--amber);
+    color: var(--ink);
+  }
+}
+
+.table__meta {
+  margin: 0.4rem 0 0;
+  font: 600 0.85rem var(--font-mono);
+}
+
+.opening {
+  max-width: 24rem;
+}
+
+.state--error .link {
+  margin-left: 0.5rem;
+}

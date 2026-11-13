@@ -1,0 +1,69 @@
+<section class="comanda">
+  @if (loading()) {
+    <p class="state" role="status">Cargando la comanda…</p>
+  } @else if (error(); as message) {
+    <div class="state state--error" role="alert">
+      <p>{{ message }}</p>
+      <a class="btn btn--dark" [routerLink]="['/pedidos', orderId]">Volver al pedido</a>
+    </div>
+  } @else if (order(); as o) {
+    <div class="toolbar">
+      <a class="back" [routerLink]="['/pedidos', o.id]">← Volver al pedido</a>
+      <button type="button" class="btn btn--amber" (click)="print()">Imprimir comanda</button>
+    </div>
+
+    <article class="sheet" aria-label="Comanda de cocina">
+      <p class="brand">KUVORA</p>
+      <h1 class="title">Comanda · Ronda {{ roundNumber }}</h1>
+
+      <dl class="info">
+        <div>
+          <dt>Pedido</dt>
+          <dd>#{{ o.number }}</dd>
+        </div>
+        <div>
+          <dt>{{ o.channel === 'DineIn' ? 'Mesa' : 'Canal' }}</dt>
+          <dd>{{ o.channel === 'DineIn' ? (o.tableName ?? '—') : 'Mostrador' }}</dd>
+        </div>
+        @if (o.guestCount) {
+          <div>
+            <dt>Personas</dt>
+            <dd>{{ o.guestCount }}</dd>
+          </div>
+        }
+        <div>
+          <dt>Mesero</dt>
+          <dd>{{ o.waiterName }}</dd>
+        </div>
+        @if (sentAtUtc(); as sent) {
+          <div>
+            <dt>Enviada</dt>
+            <dd>{{ sent | date: 'dd/MM HH:mm' }}</dd>
+          </div>
+        }
+      </dl>
+
+      <ul class="items">
+        @for (item of items(); track item.id) {
+          <li class="item" [class.item--cancelled]="item.status === 'Cancelled'">
+            <p class="item__main">
+              <span class="item__qty">{{ item.quantity }} ×</span>
+              <span class="item__name">{{ item.productName }}</span>
+            </p>
+            @if (item.dinerNumber) {
+              <p class="item__detail">Comensal {{ item.dinerNumber }}</p>
+            }
+            @if (item.note) {
+              <p class="item__note">» {{ item.note }}</p>
+            }
+            @if (item.status === 'Cancelled') {
+              <p class="item__cancelled">CANCELADO — no preparar</p>
+            }
+          </li>
+        }
+      </ul>
+
+      <p class="foot">- - - - - - - - - - - - - - - -</p>
+    </article>
+  }
+</section>

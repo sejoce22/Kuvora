@@ -1,0 +1,326 @@
+<section class="order">
+  @if (loading()) {
+    <p class="state" role="status">Cargando el pedido…</p>
+  } @else if (loadError(); as message) {
+    <div class="state state--error" role="alert">
+      <p>{{ message }}</p>
+      <a class="btn btn--dark" routerLink="/mesas">Volver a las mesas</a>
+      <button type="button" class="btn btn--ghost" (click)="loadOrder()">Reintentar</button>
+    </div>
+  } @else if (order(); as o) {
+    <header class="head">
+      <a class="back" routerLink="/mesas">← Mesas</a>
+      <p class="eyebrow">Pedido #{{ o.number }}</p>
+      <h1>{{ o.channel === 'DineIn' ? (o.tableName ?? 'Mesa') : 'Mostrador' }}</h1>
+      <p class="meta">
+        {{ o.waiterName }}
+        @if (o.guestCount) {
+          · {{ o.guestCount }} {{ o.guestCount === 1 ? 'persona' : 'personas' }}
+        }
+      </p>
+    </header>
+
+    @if (o.status === 'Cancelled') {
+      <p class="state state--error" role="status">
+        Pedido cancelado.
+        @if (o.cancelReason) {
+          Motivo: {{ o.cancelReason }}
+        }
+      </p>
+    }
+
+    @if (actionError(); as message) {
+      <p class="state state--error" role="alert">{{ message }}</p>
+    }
+
+    <div class="layout">
+      <!-- ================= Carta ================= -->
+      <div class="carta">
+        <div class="field">
+          <label for="order-search">Buscar producto <kbd>/</kbd></label>
+          <input
+            #searchInput
+            id="order-search"
+            type="search"
+            autocomplete="off"
+            placeholder="Escribe y presiona Enter para agregar el primero"
+            [value]="search()"
+            (input)="setSearch($event)"
+            (keydown.enter)="addFirst()"
+          />
+        </div>
+
+        @if (guestChips().length > 0) {
+          <div class="chips" role="group" aria-label="Asignar a">
+            <span class="chips__label">Para:</span>
+            <button type="button" class="chip" [attr.aria-pressed]="diner() === null" (click)="diner.set(null)">
+              Compartido
+            </button>
+            @for (n of guestChips(); track n) {
+              <button type="button" class="chip" [attr.aria-pressed]="diner() === n" (click)="diner.set(n)">
+                Comensal {{ n }}
+              </button>
+            }
+          </div>
+        }
+
+        <div class="chips" role="group" aria-label="Categoría">
+          <button
+            type="button"
+            class="chip"
+            [attr.aria-pressed]="categoryFilter() === null"
+            (click)="categoryFilter.set(null)"
+          >
+            Todas
+          </button>
+          @for (category of categories(); track category.id) {
+            <button
+              type="button"
+              class="chip"
+              [attr.aria-pressed]="categoryFilter() === category.id"
+              (click)="categoryFilter.set(category.id)"
+            >
+              {{ category.name }}
+            </button>
+          }
+        </div>
+
+        @if (catalogFailed()) {
+          <p class="state state--error" role="alert">
+            No pudimos cargar la carta.
+            <button type="button" class="link" (click)="loadCatalog()">Reintentar</button>
+          </p>
+        } @else if (groups().length === 0) {
+          <p class="state">No hay productos que coincidan.</p>
+        }
+
+        @for (group of groups(); track group.category.id) {
+          <section class="group">
+            <h2 class="group__title">{{ group.category.name }}</h2>
+            <ul class="products">
+              @for (product of group.products; track product.id) {
+                <li>
+                  <button
+                    type="button"
+                    class="product"
+                    [disabled]="!isOpen() || busy()"
+                    (click)="addProduct(product)"
+                  >
+                    <span class="product__name">{{ product.name }}</span>
+                    <span class="product__price">{{ formatClp(product.price) }}</span>
+                  </button>
+                </li>
+              }
+            </ul>
+          </section>
+        }
+      </div>
+
+      <!-- ================= Comanda ================= -->
+      <aside class="ticket" aria-label="Comanda">
+        <h2 class="ticket__title">Comanda</h2>
+
+        <h3 class="ticket__section">Por enviar</h3>
+        @if (pendingItems().length === 0) {
+          <p class="empty">Toca un producto de la carta para agregarlo.</p>
+        }
+        <ul class="lines">
+          @for (item of pendingItems(); track item.id) {
+            <li class="line">
+              <div class="line__row">
+                <span class="line__name">{{ item.productName }}</span>
+                <span class="line__sub">{{ formatClp(item.subtotal) }}</span>
+              </div>
+
+              <div class="line__row line__row--tools">
+                <div class="qty">
+                  <button
+                    type="button"
+                    class="qty__btn"
+                    [attr.aria-label]="'Quitar una unidad de ' + item.productName"
+                    [disabled]="busy()"
+                    (click)="changeQuantity(item, -1)"
+                  >
+                    −
+                  </button>
+                  <span class="qty__n" aria-live="polite">{{ item.quantity }}</span>
+                  <button
+                    type="button"
+                    class="qty__btn"
+                    [attr.aria-label]="'Agregar una unidad de ' + item.productName"
+                    [disabled]="busy()"
+                    (click)="changeQuantity(item, 1)"
+                  >
+                    +
+                  </button>
+                </div>
+
+                @if (guestChips().length > 0) {
+                  <select
+                    class="line__diner"
+                    [attr.aria-label]="'Comensal de ' + item.productName"
+                    [disabled]="busy()"
+                    (change)="onDinerChange(item, $event)"
+                  >
+                    <option value="" [selected]="item.dinerNumber === null">Compartido</option>
+                    @for (n of guestChips(); track n) {
+                      <option [value]="n" [selected]="item.dinerNumber === n">Comensal {{ n }}</option>
+                    }
+                  </select>
+                }
+
+                <button type="button" class="link" (click)="toggleNoteEditor(item)">
+                  {{ item.note ? 'Nota' : '+ Nota' }}
+                </button>
+                <button type="button" class="link link--danger" [disabled]="busy()" (click)="remove(item)">
+                  Quitar
+                </button>
+              </div>
+
+              @if (item.note) {
+                <p class="line__note">{{ item.note }}</p>
+              }
+
+              @if (noteOpenId() === item.id) {
+                <div class="notes">
+                  <div class="chips">
+                    @for (text of quickNotes; track text) {
+                      <button
+                        type="button"
+                        class="chip chip--small"
+                        [attr.aria-pressed]="hasNote(item, text)"
+                        [disabled]="busy()"
+                        (click)="toggleQuickNote(item, text)"
+                      >
+                        {{ text }}
+                      </button>
+                    }
+                  </div>
+                  <input
+                    type="text"
+                    class="notes__input"
+                    placeholder="Otra nota y Enter"
+                    [attr.aria-label]="'Nota de ' + item.productName"
+                    [attr.maxlength]="noteMax"
+                    [value]="item.note ?? ''"
+                    (change)="saveNote(item, $event)"
+                  />
+                </div>
+              }
+            </li>
+          }
+        </ul>
+
+        @for (round of rounds(); track round.round) {
+          <section class="round" [class.is-new]="justSentRound() === round.round">
+            <h3 class="ticket__section">
+              Ronda {{ round.round }}
+              @if (round.sentAtUtc) {
+                · enviada {{ round.sentAtUtc | date: 'HH:mm' }}
+              }
+            </h3>
+            <a class="link" [routerLink]="['/pedidos', o.id, 'comanda', round.round]">Ver e imprimir comanda</a>
+            <ul class="lines">
+              @for (item of round.items; track item.id) {
+                <li class="line line--sent">
+                  <div class="line__row">
+                    <span class="line__name">{{ item.quantity }} × {{ item.productName }}</span>
+                    <span class="line__sub">{{ formatClp(item.subtotal) }}</span>
+                  </div>
+                  @if (item.dinerNumber || item.note) {
+                    <p class="line__note">
+                      @if (item.dinerNumber) {
+                        Comensal {{ item.dinerNumber }}
+                      }
+                      @if (item.dinerNumber && item.note) {
+                        ·
+                      }
+                      {{ item.note }}
+                    </p>
+                  }
+                  @if (isAdmin() && isOpen()) {
+                    <button type="button" class="link link--danger" (click)="askCancelItem(item)">
+                      Cancelar ítem
+                    </button>
+                  }
+                </li>
+              }
+            </ul>
+          </section>
+        }
+
+        @if (cancelledItems().length > 0) {
+          <section class="round">
+            <h3 class="ticket__section">Cancelados</h3>
+            <ul class="lines">
+              @for (item of cancelledItems(); track item.id) {
+                <li class="line line--cancelled">
+                  <div class="line__row">
+                    <span class="line__name">{{ item.quantity }} × {{ item.productName }}</span>
+                  </div>
+                  @if (item.cancelReason) {
+                    <p class="line__note">{{ item.cancelReason }}</p>
+                  }
+                </li>
+              }
+            </ul>
+          </section>
+        }
+
+        <p class="total">
+          <span>Total</span>
+          <strong>{{ formatClp(o.total) }}</strong>
+        </p>
+
+        @if (cancelTarget(); as target) {
+          <form class="cancel" (submit)="$event.preventDefault(); confirmCancel()" novalidate>
+            <label for="cancel-reason">
+              {{ target.kind === 'order' ? 'Motivo para cancelar el pedido' : 'Motivo para cancelar ' + target.item.productName }}
+            </label>
+            <input
+              id="cancel-reason"
+              type="text"
+              [formControl]="reason"
+              [attr.maxlength]="reasonMax"
+              [attr.aria-invalid]="reason.touched && reason.invalid"
+            />
+            @if (reason.touched && reason.invalid) {
+              <p class="hint">Escribe el motivo (máximo {{ reasonMax }} caracteres).</p>
+            }
+            <div class="cancel__buttons">
+              <button type="submit" class="btn btn--danger" [disabled]="busy()">
+                {{ target.kind === 'order' ? 'Cancelar pedido' : 'Cancelar ítem' }}
+              </button>
+              <button type="button" class="btn btn--ghost" (click)="closeCancel()">Volver</button>
+            </div>
+          </form>
+        }
+
+        @if (isOpen()) {
+          <div class="ticket__buttons">
+            <button
+              type="button"
+              class="btn btn--amber btn--wide"
+              [disabled]="busy() || pendingItems().length === 0"
+              (click)="send()"
+            >
+              Enviar a cocina <kbd>Ctrl+Enter</kbd>
+            </button>
+            @if (canCancelOrder()) {
+              <button type="button" class="link link--danger" (click)="askCancelOrder()">Cancelar pedido</button>
+            }
+          </div>
+        }
+      </aside>
+    </div>
+
+    @if (toast(); as t) {
+      <div class="toast" role="status">
+        <span>{{ t.message }}</span>
+        @if (t.undo) {
+          <button type="button" class="toast__undo" (click)="t.undo()">Deshacer</button>
+        }
+      </div>
+    }
+  }
+</section>

@@ -35,3 +35,25 @@ body {
     linear-gradient(90deg, rgb(255 255 255 / 0.045) 1px, transparent 1px) 0 0 / 2.5rem 2.5rem,
     var(--tile);
 }
+
+/* Comanda imprimible: solo la página con nombre "comanda" se imprime en rollo de 80 mm (ver comanda.scss). */
+@page comanda {
+  size: 80mm auto;
+  margin: 3mm;
+}
+
+@media print {
+  body {
+    background: #fff;
+  }
+
+  /* Al imprimir, fuera la barra y el fondo de la app: solo queda el papel. */
+  .bar,
+  .kitchen-bg::before {
+    display: none !important;
+  }
+
+  .kitchen-bg {
+    background: #fff !important;
+  }
+}

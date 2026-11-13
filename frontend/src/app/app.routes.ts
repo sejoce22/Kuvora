@@ -29,6 +29,16 @@ export const routes: Routes = [
         loadComponent: () => import('./features/tables/tables').then((m) => m.Tables),
       },
       {
+        // Pantalla de pedido; el backend decide quién puede operar (Admin, Mesero y Cajero).
+        path: 'pedidos/:id',
+        loadComponent: () => import('./features/orders/order').then((m) => m.OrderScreen),
+      },
+      {
+        // Comanda imprimible de una ronda (80 mm)
+        path: 'pedidos/:id/comanda/:round',
+        loadComponent: () => import('./features/orders/comanda').then((m) => m.Comanda),
+      },
+      {
         path: 'usuarios',
         canActivate: [roleGuard('Admin')],
         loadComponent: () => import('./features/users/users').then((m) => m.Users),

@@ -1,0 +1,187 @@
+:host {
+  display: block;
+}
+
+.comanda {
+  max-width: 28rem;
+  margin: clamp(1.5rem, 5vh, 3rem) auto 0;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.back {
+  color: var(--amber);
+  font: 600 0.85rem var(--font-mono);
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.btn {
+  display: inline-block;
+  padding: 0.6rem 1rem;
+  border: 1.5px solid transparent;
+  border-radius: 0.35rem;
+  font: 600 0.9rem var(--font-display);
+  text-decoration: none;
+  cursor: pointer;
+
+  &--amber {
+    background: var(--amber);
+    color: var(--ink);
+
+    &:hover {
+      background: #ffb85a;
+    }
+  }
+
+  &--dark {
+    background: var(--tile);
+    color: var(--paper);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--amber);
+    outline-offset: 3px;
+  }
+}
+
+// Papel de 80 mm (unos 302 px). En pantalla se ve como un papelito; al imprimir ocupa el ancho del rollo.
+.sheet {
+  width: 80mm;
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 5mm 4mm 6mm;
+  background: #fff;
+  color: #000;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.35;
+  box-shadow: 0 14px 24px -10px rgb(0 0 0 / 0.55);
+  // Página con nombre: solo la comanda se imprime a 80 mm (ver @page comanda en styles.scss)
+  page: comanda;
+}
+
+.brand {
+  margin: 0;
+  text-align: center;
+  font: 800 1.1rem var(--font-display);
+  letter-spacing: 0.3em;
+}
+
+.title {
+  margin: 0.3rem 0 0.6rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px dashed #000;
+  text-align: center;
+  font: 700 1rem var(--font-mono);
+}
+
+.info {
+  margin: 0;
+
+  div {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  dt {
+    text-transform: uppercase;
+  }
+
+  dd {
+    margin: 0;
+    font-weight: 700;
+  }
+}
+
+.items {
+  margin: 0.6rem 0 0;
+  padding: 0.5rem 0 0;
+  border-top: 1px dashed #000;
+  list-style: none;
+}
+
+.item {
+  padding: 0.35rem 0;
+  break-inside: avoid;
+
+  p {
+    margin: 0;
+  }
+
+  &__main {
+    display: flex;
+    gap: 0.4rem;
+    font-size: 15px;
+    font-weight: 700;
+  }
+
+  &__detail {
+    padding-left: 0.2rem;
+  }
+
+  &__note {
+    padding-left: 0.2rem;
+    font-weight: 700;
+  }
+
+  &--cancelled {
+    .item__main {
+      text-decoration: line-through;
+    }
+  }
+
+  &__cancelled {
+    font-weight: 800;
+  }
+}
+
+.foot {
+  margin: 0.6rem 0 0;
+  text-align: center;
+  letter-spacing: 0.05em;
+}
+
+.state {
+  margin-top: 2rem;
+  font: 400 0.95rem var(--font-mono);
+  color: rgb(246 243 234 / 0.75);
+
+  &--error {
+    padding: 0.9rem 1rem;
+    border-left: 4px solid var(--chili);
+    background: #fbe9e4;
+    color: #7a1f10;
+
+    p {
+      margin: 0 0 0.75rem;
+    }
+  }
+}
+
+@media print {
+  .comanda {
+    max-width: none;
+    margin: 0;
+  }
+
+  .toolbar {
+    display: none;
+  }
+
+  .sheet {
+    width: auto;
+    padding: 0;
+    box-shadow: none;
+  }
+}

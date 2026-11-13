@@ -36,8 +36,8 @@ body {
     var(--tile);
 }
 
-/* Comanda imprimible: solo la página con nombre "comanda" se imprime en rollo de 80 mm (ver comanda.scss). */
-@page comanda {
+/* Impresión: rollo de 80 mm de ancho y alto según el contenido. Hoy lo único que se imprime en la app es la comanda. */
+@page {
   size: 80mm auto;
   margin: 3mm;
 }
